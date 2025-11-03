@@ -1,3 +1,141 @@
+// ====== تحميل المكتبات الأساسية ======
+import express from 'express';
+import bodyParser from 'body-parser';
+import session from 'express-session';
+import cors from 'cors';
+import morgan from 'morgan';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import pg from 'pg';
+import { v4 as uuidv4 } from 'uuid';
+import dotenv from 'dotenv';
+import nodemailer from 'nodemailer';
+import crypto from 'crypto';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ====== إعداد __dirname لـ ES Modules ======
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ====== تحميل المتغيرات من .env ======
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// ====== إعداد الاتصال بقاعدة البيانات PostgreSQL ======
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/educationdb',
+});
+
+// ====== دالة تنفيذ الاستعلام ======
+async function execQuery(query, params = []) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(query, params);
+    return result.rows;
+  } catch (err) {
+    logger.error('DB Error:', err);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+// ====== إعدادات الميدل وير العامة ======
+app.use(cors());
+app.use(helmet());
+app.use(morgan('dev'));
+app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ====== حماية من السبام ======
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  message: 'عدد الطلبات كبير جدًا، حاول لاحقًا',
+});
+app.use(limiter);
+
+// ====== إعداد الجلسات ======
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'supersecretkey',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false },
+  })
+);
+
+// ====== إعداد اللوجر البسيط ======
+const logger = {
+  info: (...msg) => console.log(`[INFO ${new Date().toISOString()}]`, ...msg),
+  error: (...msg) => console.error(`[ERROR ${new Date().toISOString()}]`, ...msg),
+};
+
+// ====== دالة إرسال بريد إلكتروني آمن ======
+async function sendEmailSafe({ to, subject, html }) {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+    await transporter.sendMail({ from: process.env.EMAIL_USER, to, subject, html });
+    logger.info(`📧 Email sent to ${to}`);
+  } catch (error) {
+    logger.error('Email send error:', error.message);
+  }
+}
+
+// ====== دالة فحص تسجيل الدخول ======
+function requireLogin(req, res, next) {
+  if (!req.session.user) {
+    return res.status(401).json({ message: 'يجب تسجيل الدخول أولاً' });
+  }
+  next();
+}
+
+// ====== دوال مساعدة إضافية ======
+function hashValue(value) {
+  return crypto.createHash('sha256').update(value).digest('hex');
+}
+
+function generateCode(length = 6) {
+  return Math.random().toString(36).substr(2, length).toUpperCase();
+}
+
+function formatPrice(amount) {
+  return `${amount.toFixed(2)} EGP`;
+}
+
+function success(res, data = {}, message = 'تم بنجاح') {
+  return res.json({ success: true, message, ...data });
+}
+
+function fail(res, message = 'حدث خطأ ما', status = 500) {
+  return res.status(status).json({ success: false, message });
+}
+
+function currentUser(req) {
+  return req.session.user || null;
+}
+
+function loginUser(req, user) {
+  req.session.user = { id: user.id, email: user.email, role: user.role, username: user.username };
+}
+
+function logoutUser(req) {
+  req.session.destroy();
+}
+
+// ====== دالة ثابتة لتوليد رابط التطبيق ======
+const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
+
 // ========= نظام الكورسات والدروس =========
 
 // الحصول على الكورسات
@@ -100,14 +238,14 @@ app.post('/api/enroll', requireLogin, async (req, res) => {
       try {
         await sendEmailSafe({
           to: req.session.user.email,
-          subject: 'تم تسجيلك في الكورس - احجزلي التعليمية',
+          subject: 'تم تسجيلك في الكورس - Elmahdy English',
           html: `
             <div style="font-family: 'Cairo', Arial, sans-serif; direction: rtl; padding: 20px;">
-              <h2 style="color: #1a7f46;">تم تسجيلك في الكورس بنجاح! 🎉</h2>
+              <h2 style="color: #0056d6;">تم تسجيلك في الكورس بنجاح! 🎉</h2>
               <p><strong>الكورس:</strong> ${course.title}</p>
               <p><strong>المدرب:</strong> ${course.instructor_name}</p>
               <p>يمكنك الآن البدء في التعلم من خلال لوحة التعلم.</p>
-              <a href="${APP_URL}/course/${courseId}" style="background: #1a7f46; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+              <a href="${APP_URL}/course/${courseId}" style="background: #0056d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                 ابدأ التعلم
               </a>
             </div>
@@ -117,11 +255,10 @@ app.post('/api/enroll', requireLogin, async (req, res) => {
         logger.error('Failed to send enrollment email:', emailError);
       }
 
-      return res.json({ 
-        message: 'تم التسجيل في الكورس بنجاح',
+      return success(res, { 
         enrollmentId: enrollmentId,
         redirectUrl: `/course/${courseId}`
-      });
+      }, 'تم التسجيل في الكورس بنجاح');
     }
 
     // إذا كان الكورس مدفوع، إنشاء طلب دفع
@@ -141,16 +278,15 @@ app.post('/api/enroll', requireLogin, async (req, res) => {
        paymentSession.amount, paymentSession.status, paymentSession.created_at]
     );
 
-    res.json({
-      message: 'يجب إتمام عملية الدفع',
+    success(res, {
       paymentRequired: true,
       paymentSessionId: paymentSession.id,
       amount: course.price
-    });
+    }, 'يجب إتمام عملية الدفع');
 
   } catch (error) {
     logger.error('Enrollment error', error);
-    res.status(500).json({ message: 'حدث خطأ أثناء التسجيل في الكورس' });
+    fail(res, 'حدث خطأ أثناء التسجيل في الكورس');
   }
 });
 
@@ -202,7 +338,7 @@ app.get('/api/courses/:id', async (req, res) => {
 
   } catch (error) {
     logger.error('Get course details error', error);
-    res.status(500).json({ message: 'حدث خطأ في جلب تفاصيل الكورس' });
+    fail(res, 'حدث خطأ في جلب تفاصيل الكورس');
   }
 });
 
@@ -262,16 +398,15 @@ app.post('/api/progress', requireLogin, async (req, res) => {
       [progress, JSON.stringify(progressData), new Date(), req.session.user.id, courseId]
     );
 
-    res.json({
-      message: 'تم تحديث التقدم',
+    success(res, {
       progress: progress,
       completedParts: completedParts,
       totalParts: totalParts[0].count
-    });
+    }, 'تم تحديث التقدم');
 
   } catch (error) {
     logger.error('Update progress error', error);
-    res.status(500).json({ message: 'حدث خطأ أثناء تحديث التقدم' });
+    fail(res, 'حدث خطأ أثناء تحديث التقدم');
   }
 });
 
@@ -287,10 +422,10 @@ app.get('/api/user/courses', requireLogin, async (req, res) => {
       ORDER BY e.updated_at DESC
     `, [req.session.user.id]);
 
-    res.json(enrollments);
+    success(res, { courses: enrollments });
   } catch (error) {
     logger.error('Get user courses error', error);
-    res.status(500).json({ message: 'حدث خطأ في جلب كورساتك' });
+    fail(res, 'حدث خطأ في جلب كورساتك');
   }
 });
 
@@ -300,12 +435,12 @@ app.post('/api/courses', requireLogin, async (req, res) => {
     const { title, description, category, level, price, is_free, requirements, objectives } = req.body;
     
     if (!title || !description || !category) {
-      return res.status(400).json({ message: 'العنوان والوصف والتصنيف مطلوبون' });
+      return fail(res, 'العنوان والوصف والتصنيف مطلوبون', 400);
     }
 
     // التحقق من أن المستخدم معلم أو مدير
     if (req.session.user.role !== 'teacher' && req.session.user.role !== 'admin') {
-      return res.status(403).json({ message: 'مسموح للمعلمين فقط' });
+      return fail(res, 'مسموح للمعلمين فقط', 403);
     }
 
     const courseId = uuidv4();
@@ -319,22 +454,182 @@ app.post('/api/courses', requireLogin, async (req, res) => {
        req.session.user.id, false, new Date()]
     );
 
-    res.json({
-      message: 'تم إنشاء الكورس بنجاح',
-      courseId: courseId,
-      success: true
-    });
+    success(res, { courseId: courseId }, 'تم إنشاء الكورس بنجاح');
 
   } catch (error) {
     logger.error('Create course error', error);
-    res.status(500).json({ message: 'حدث خطأ أثناء إنشاء الكورس' });
+    fail(res, 'حدث خطأ أثناء إنشاء الكورس');
   }
 });
 
-// ========= الجداول الجديدة في قاعدة البيانات =========
+// ========= نظام المستخدمين =========
+
+// تسجيل الدخول
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return fail(res, 'البريد الإلكتروني وكلمة المرور مطلوبان', 400);
+    }
+
+    const users = await execQuery(
+      'SELECT * FROM users WHERE email = $1 AND password_hash = $2',
+      [email, hashValue(password)]
+    );
+
+    if (users.length === 0) {
+      return fail(res, 'البريد الإلكتروني أو كلمة المرور غير صحيحة', 401);
+    }
+
+    const user = users[0];
+    loginUser(req, user);
+
+    success(res, {
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role
+      }
+    }, 'تم تسجيل الدخول بنجاح');
+
+  } catch (error) {
+    logger.error('Login error', error);
+    fail(res, 'حدث خطأ أثناء تسجيل الدخول');
+  }
+});
+
+// تسجيل الخروج
+app.post('/api/logout', (req, res) => {
+  logoutUser(req);
+  success(res, {}, 'تم تسجيل الخروج بنجاح');
+});
+
+// إنشاء حساب جديد
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, email, password, role = 'student' } = req.body;
+    
+    if (!username || !email || !password) {
+      return fail(res, 'جميع الحقول مطلوبة', 400);
+    }
+
+    // التحقق من عدم وجود المستخدم مسبقاً
+    const existingUsers = await execQuery(
+      'SELECT id FROM users WHERE email = $1 OR username = $2',
+      [email, username]
+    );
+
+    if (existingUsers.length > 0) {
+      return fail(res, 'البريد الإلكتروني أو اسم المستخدم موجود مسبقاً', 400);
+    }
+
+    const userId = uuidv4();
+    
+    await execQuery(
+      `INSERT INTO users (id, username, email, password_hash, role, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [userId, username, email, hashValue(password), role, new Date()]
+    );
+
+    // تسجيل الدخول تلقائياً
+    const newUser = { id: userId, email, username, role };
+    loginUser(req, newUser);
+
+    // إرسال بريد ترحيبي
+    try {
+      await sendEmailSafe({
+        to: email,
+        subject: 'مرحباً بك في Elmahdy English!',
+        html: `
+          <div style="font-family: 'Cairo', Arial, sans-serif; direction: rtl; padding: 20px;">
+            <h2 style="color: #0056d6;">أهلاً وسهلاً بك في Elmahdy English! 🎉</h2>
+            <p><strong>اسم المستخدم:</strong> ${username}</p>
+            <p>نشكرك على انضمامك إلى منصتنا التعليمية.</p>
+            <p>يمكنك الآن استكشاف الكورسات والبدء في رحلتك التعليمية.</p>
+            <a href="${APP_URL}" style="background: #0056d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+              ابدأ التعلم الآن
+            </a>
+          </div>
+        `
+      });
+    } catch (emailError) {
+      logger.error('Failed to send welcome email:', emailError);
+    }
+
+    success(res, {
+      user: newUser
+    }, 'تم إنشاء الحساب بنجاح');
+
+  } catch (error) {
+    logger.error('Registration error', error);
+    fail(res, 'حدث خطأ أثناء إنشاء الحساب');
+  }
+});
+
+// ========= نظام المدفوعات =========
+
+// إنشاء جلسة دفع
+app.post('/api/payment/create-session', requireLogin, async (req, res) => {
+  try {
+    const { courseId, paymentSessionId } = req.body;
+    
+    // محاكاة عملية الدفع (في الإنتاج استخدم Stripe أو Paymob)
+    const paymentSession = await execQuery(
+      'SELECT * FROM payment_sessions WHERE id = $1 AND user_id = $2',
+      [paymentSessionId, req.session.user.id]
+    );
+
+    if (paymentSession.length === 0) {
+      return fail(res, 'جلسة الدفع غير موجودة', 404);
+    }
+
+    // محاكاة الدفع الناجح
+    const enrollmentId = uuidv4();
+    
+    await execQuery(
+      `INSERT INTO enrollments (id, user_id, course_id, enrolled_at, progress)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [enrollmentId, req.session.user.id, courseId, new Date(), 0]
+    );
+
+    // تحديث حالة الدفع
+    await execQuery(
+      'UPDATE payment_sessions SET status = $1, completed_at = $2 WHERE id = $3',
+      ['completed', new Date(), paymentSessionId]
+    );
+
+    success(res, {
+      enrollmentId: enrollmentId,
+      redirectUrl: `/course/${courseId}`
+    }, 'تم الدفع والتسجيل في الكورس بنجاح');
+
+  } catch (error) {
+    logger.error('Payment error', error);
+    fail(res, 'حدث خطأ أثناء عملية الدفع');
+  }
+});
+
+// ========= إنشاء الجداول في قاعدة البيانات =========
 
 async function createEducationTables() {
   try {
+    // جدول المستخدمين
+    await execQuery(`
+      CREATE TABLE IF NOT EXISTS users (
+        id VARCHAR(36) PRIMARY KEY,
+        username VARCHAR(100) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'student',
+        bio TEXT,
+        avatar_url VARCHAR(500),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // جدول الكورسات
     await execQuery(`
       CREATE TABLE IF NOT EXISTS courses (
@@ -419,5 +714,64 @@ async function createEducationTables() {
   }
 }
 
-// استدعاء الدالة في بداية التشغيل
-createEducationTables();
+// ====== إضافة بيانات تجريبية ======
+async function seedSampleData() {
+  try {
+    // التحقق من وجود بيانات
+    const existingUsers = await execQuery('SELECT COUNT(*) FROM users');
+    
+    if (parseInt(existingUsers[0].count) === 0) {
+      // إضافة مستخدمين تجريبيين
+      const teacherId = uuidv4();
+      await execQuery(
+        `INSERT INTO users (id, username, email, password_hash, role, bio) 
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [teacherId, 'teacher_ahmed', 'teacher@elmahdy-english.com', hashValue('password'), 'teacher', 'مدرس لغة إنجليزية محترف مع 10 سنوات خبرة']
+      );
+
+      const studentId = uuidv4();
+      await execQuery(
+        `INSERT INTO users (id, username, email, password_hash, role) 
+         VALUES ($1, $2, $3, $4, $5)`,
+        [studentId, 'student_mohamed', 'student@elmahdy-english.com', hashValue('password'), 'student']
+      );
+
+      // إضافة كورسات تجريبية
+      const course1Id = uuidv4();
+      await execQuery(
+        `INSERT INTO courses (id, title, description, category, level, price, is_free, instructor_id, published, featured)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [course1Id, 'الإنجليزية للمبتدئين من الصفر', 'تعلم الإنجليزية من البداية مع أفضل المدرسين', 'grammar', 'beginner', 150, false, teacherId, true, true]
+      );
+
+      const course2Id = uuidv4();
+      await execQuery(
+        `INSERT INTO courses (id, title, description, category, level, price, is_free, instructor_id, published)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [course2Id, 'محادثة إنجليزية متقدمة', 'تطوير مهارات المحادثة للمستويات المتقدمة', 'conversation', 'advanced', 200, false, teacherId, true]
+      );
+
+      const course3Id = uuidv4();
+      await execQuery(
+        `INSERT INTO courses (id, title, description, category, level, price, is_free, instructor_id, published)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [course3Id, 'قواعد اللغة الإنجليزية الأساسية', 'شرح مبسط لقواعد اللغة الإنجليزية', 'grammar', 'beginner', 0, true, teacherId, true]
+      );
+
+      logger.info('✅ Sample data seeded successfully');
+    }
+  } catch (error) {
+    logger.error('❌ Error seeding sample data', error);
+  }
+}
+
+// ====== تشغيل السيرفر ======
+app.listen(PORT, async () => {
+  logger.info(`🚀 Server running on ${APP_URL}`);
+  
+  // إنشاء الجداول وإضافة البيانات التجريبية
+  await createEducationTables();
+  await seedSampleData();
+});
+
+export default app;
