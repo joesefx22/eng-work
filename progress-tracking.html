@@ -1,1 +1,3605 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام متابعة مستويات الطلاب - الإدارة التعليمية</title>
+    
+    <!-- Bootstrap + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #1a7f46;
+            --secondary-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --info-color: #3498db;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+        }
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
 
+        /* تصميم الشريط الجانبي */
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary-color), #156c3d);
+            color: white;
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 280px;
+            z-index: 1000;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 0.8rem 1rem;
+            margin: 0.2rem 0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        .sidebar .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* المحتوى الرئيسي */
+        .main-content {
+            margin-right: 280px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* البطاقات والإحصائيات */
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+            border: none;
+            transition: transform 0.3s ease;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .icon-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* بطاقات الطلاب */
+        .student-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .student-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-color: var(--primary-color);
+        }
+        
+        .student-image {
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        
+        .student-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .student-grade {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+        }
+
+        /* بطاقات الكورسات */
+        .course-card {
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .course-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .course-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .course-stat {
+            text-align: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .course-stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .course-stat-label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .quick-action-btn {
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        /* محدد الطالب */
+        .student-selector-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            border-right: 4px solid var(--primary-color);
+        }
+
+        .student-selector-label {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+        }
+
+        /* التبويبات */
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
+
+        /* الجداول */
+        .table-responsive {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .badge-status {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .action-buttons .btn {
+            margin: 0 0.2rem;
+        }
+
+        .course-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        /* الرسوم البيانية */
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        /* الحالات الفارغة */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* التحميل */
+        .loading-spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* التجاوب */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                position: relative;
+                min-height: auto;
+            }
+            
+            .main-content {
+                margin-right: 0;
+            }
+
+            .quick-actions {
+                flex-direction: column;
+            }
+
+            .quick-action-btn {
+                min-width: 100%;
+            }
+
+            .student-selector-container {
+                padding: 1rem;
+            }
+        }
+
+        /* أنماط جديدة للتحسينات */
+        .filter-section {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            padding-right: 40px;
+        }
+
+        .search-box i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+
+        .export-buttons .btn {
+            margin-left: 0.5rem;
+        }
+
+        .notification-item {
+            border-left: 4px solid var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .activity-log-item {
+            border-right: 3px solid var(--primary-color);
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            border-radius: 8px;
+        }
+
+        /* أنماط إضافية للتحسين */
+        .hover-scale {
+            transition: transform 0.2s ease-in-out;
+        }
+        
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+        
+        .shadow-hover {
+            transition: box-shadow 0.3s ease;
+        }
+        
+        .shadow-hover:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
+        
+        .text-gradient {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-in-right {
+            animation: slideInRight 0.5s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .bounce-in {
+            animation: bounceIn 0.6s ease-out;
+        }
+        
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); opacity: 1; }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* تحسينات للجداول */
+        .table-hover tbody tr {
+            transition: all 0.3s ease;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(26, 127, 70, 0.05) !important;
+            transform: translateX(5px);
+        }
+        
+        /* تحسينات للأزرار */
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(26, 127, 70, 0.4);
+        }
+        
+        /* تحسينات للبطاقات */
+        .card-hover {
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        
+        .card-hover:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        /* تخصيص شريط التمرير */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #156c3d;
+        }
+        
+        /* تأثيرات خاصة للتنبيهات */
+        .alert-pulse {
+            animation: alertPulse 2s infinite;
+        }
+        
+        @keyframes alertPulse {
+            0% { box-shadow: 0 0 0 0 rgba(26, 127, 70, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(26, 127, 70, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(26, 127, 70, 0); }
+        }
+        
+        /* تحسينات للشريط الجانبي */
+        .sidebar-brand {
+            padding: 1.5rem 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 1rem;
+        }
+        
+        .sidebar-footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        /* تأثيرات للصور */
+        .img-hover-zoom {
+            overflow: hidden;
+        }
+        
+        .img-hover-zoom img {
+            transition: transform 0.5s ease;
+        }
+        
+        .img-hover-zoom:hover img {
+            transform: scale(1.1);
+        }
+        
+        /* تخصيص الـ modals */
+        .modal-blur {
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-scale {
+            animation: modalScale 0.3s ease-out;
+        }
+        
+        @keyframes modalScale {
+            from { transform: scale(0.7); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        /* تأثيرات النص */
+        .text-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- الشريط الجانبي -->
+            <nav class="col-md-3 col-lg-2 sidebar d-md-block">
+                <div class="position-sticky pt-3">
+                    <div class="sidebar-brand text-center">
+                        <h4 class="mb-0 text-white">
+                            <i class="bi bi-speedometer2 me-2"></i>الإدارة التعليمية
+                        </h4>
+                        <small class="text-white-50" id="userRoleDisplay">نظام متابعة الطلاب</small>
+                    </div>
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#dashboard" data-bs-toggle="tab">
+                                <i class="bi bi-house me-2"></i>لوحة التحكم
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#students" data-bs-toggle="tab">
+                                <i class="bi bi-people me-2"></i>إدارة الطلاب
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#courses" data-bs-toggle="tab">
+                                <i class="bi bi-journal-bookmark me-2"></i>إدارة الكورسات
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#exams" data-bs-toggle="tab">
+                                <i class="bi bi-clipboard-check me-2"></i>الامتحانات والواجبات
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#reports" data-bs-toggle="tab">
+                                <i class="bi bi-graph-up me-2"></i>التقارير والإحصائيات
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#revenue" data-bs-toggle="tab">
+                                <i class="bi bi-currency-dollar me-2"></i>الإيرادات
+                            </a>
+                        </li>
+                        
+                        <!-- تبويبات خاصة بالمسؤول -->
+                        <div id="adminTabs" style="display: block;">
+                            <li class="nav-item">
+                                <a class="nav-link" href="#users" data-bs-toggle="tab">
+                                    <i class="bi bi-person-gear me-2"></i>المستخدمين
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#notifications" data-bs-toggle="tab">
+                                    <i class="bi bi-bell me-2"></i>الإشعارات
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#activity-logs" data-bs-toggle="tab">
+                                    <i class="bi bi-clock-history me-2"></i>سجل الأنشطة
+                                </a>
+                            </li>
+                        </div>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="/" target="_blank">
+                                <i class="bi bi-globe me-2"></i>الموقع الرئيسي
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <div class="sidebar-footer">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <small class="text-white-50" id="userInfoSidebar">مرحبًا</small>
+                            </div>
+                            <button class="btn btn-warning btn-sm" onclick="logout()">
+                                <i class="bi bi-box-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- المحتوى الرئيسي -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 main-content">
+                <!-- الهيدر -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <div>
+                        <h1 class="h2" id="pageTitle">لوحة متابعة الطلاب</h1>
+                        <small class="text-muted" id="userInfo">مرحبًا، مسؤول النظام</small>
+                    </div>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportData()">
+                                <i class="bi bi-download me-1"></i>تصدير البيانات
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshAll()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>تحديث
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="showHelp()">
+                                <i class="bi bi-question-circle me-1"></i>مساعدة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- محدد الطالب -->
+                <div id="studentSelectorContainer" class="student-selector-container">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="student-selector-label">
+                                <i class="bi bi-search me-2"></i>ابحث عن طالب:
+                            </label>
+                        </div>
+                        <div class="col-md-6">
+                            <select id="studentSelector" class="form-select" onchange="handleStudentChange(this.value)">
+                                <option value="all">عرض جميع الطلاب</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <small class="text-muted" id="selectedStudentInfo"></small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- نظام التنبيهات -->
+                <div id="alertsContainer"></div>
+
+                <!-- محتوى التبويبات -->
+                <div class="tab-content">
+                    <!-- تبويب لوحة التحكم -->
+                    <div class="tab-pane fade show active" id="dashboard">
+                        <!-- الإحصائيات العامة -->
+                        <div id="adminStats">
+                            <!-- بطاقات الإحصائيات -->
+                            <div class="row" id="statsContainer">
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="stat-card card-hover">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-circle bg-primary text-white me-3">
+                                                <i class="bi bi-people"></i>
+                                            </div>
+                                            <div>
+                                                <div class="stat-number" id="totalStudents">0</div>
+                                                <div class="stat-label">إجمالي الطلاب</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="stat-card card-hover">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-circle bg-success text-white me-3">
+                                                <i class="bi bi-journal-bookmark"></i>
+                                            </div>
+                                            <div>
+                                                <div class="stat-number" id="totalCourses">0</div>
+                                                <div class="stat-label">إجمالي الكورسات</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="stat-card card-hover">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-circle bg-info text-white me-3">
+                                                <i class="bi bi-clipboard-check"></i>
+                                            </div>
+                                            <div>
+                                                <div class="stat-number" id="totalExams">0</div>
+                                                <div class="stat-label">إجمالي الامتحانات</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="stat-card card-hover">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-circle bg-warning text-white me-3">
+                                                <i class="bi bi-currency-dollar"></i>
+                                            </div>
+                                            <div>
+                                                <div class="stat-number" id="totalRevenue">0</div>
+                                                <div class="stat-label">إجمالي الإيرادات</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- الرسوم البيانية -->
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="chart-container">
+                                        <h5 class="mb-3">تقدم الطلاب - آخر 30 يوم</h5>
+                                        <canvas id="studentsProgressChart" height="250"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="chart-container">
+                                        <h5 class="mb-3">توزيع الكورسات</h5>
+                                        <canvas id="coursesChart" height="250"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- الطلاب المتميزين -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="chart-container">
+                                    <h5 class="mb-3">الطلاب المتميزين</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>اسم الطالب</th>
+                                                    <th>الكورس</th>
+                                                    <th>المستوى</th>
+                                                    <th>آخر امتحان</th>
+                                                    <th>التقييم</th>
+                                                    <th>الإجراءات</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="topStudentsTable">
+                                                <!-- سيتم تعبئة الطلاب المتميزين هنا -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- تبويب إدارة الطلاب -->
+                    <div class="tab-pane fade" id="students">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>إدارة الطلاب</h4>
+                            <div class="filter-section d-flex gap-2">
+                                <select class="form-select" id="studentStatusFilter" style="width: auto;">
+                                    <option value="">جميع الحالات</option>
+                                    <option value="active">نشط</option>
+                                    <option value="inactive">غير نشط</option>
+                                </select>
+                                <select class="form-select" id="studentLevelFilter" style="width: auto;">
+                                    <option value="">جميع المستويات</option>
+                                    <option value="beginner">مبتدئ</option>
+                                    <option value="intermediate">متوسط</option>
+                                    <option value="advanced">متقدم</option>
+                                </select>
+                                <input type="text" class="form-control" id="studentSearch" style="width: auto;" placeholder="ابحث عن طالب...">
+                                <button class="btn btn-primary" onclick="filterStudents()">
+                                    <i class="bi bi-funnel me-1"></i>تصفية
+                                </button>
+                                <button class="btn btn-success" onclick="exportStudents()">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>تصدير
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>اسم الطالب</th>
+                                        <th>البريد الإلكتروني</th>
+                                        <th>عدد الكورسات</th>
+                                        <th>المستوى</th>
+                                        <th>الحالة</th>
+                                        <th>تاريخ التسجيل</th>
+                                        <th>الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentsTable">
+                                    <!-- سيتم تعبئة الطلاب هنا -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- تبويب إدارة الكورسات -->
+                    <div class="tab-pane fade" id="courses">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 id="coursesTabTitle">إدارة الكورسات</h4>
+                            <button class="btn btn-success" onclick="showAddCourseModal()">
+                                <i class="bi bi-plus-circle me-1"></i>إضافة كورس
+                            </button>
+                        </div>
+
+                        <!-- فلترة الكورسات -->
+                        <div class="card mb-4 card-hover">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="search-box">
+                                            <input type="text" class="form-control" id="searchCourses" placeholder="ابحث باسم الكورس...">
+                                            <i class="bi bi-search"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select class="form-select" id="filterCategory">
+                                            <option value="">جميع التصنيفات</option>
+                                            <option value="programming">برمجة</option>
+                                            <option value="design">تصميم</option>
+                                            <option value="marketing">تسويق</option>
+                                            <option value="language">لغات</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select class="form-select" id="filterLevel">
+                                            <option value="">جميع المستويات</option>
+                                            <option value="beginner">مبتدئ</option>
+                                            <option value="intermediate">متوسط</option>
+                                            <option value="advanced">متقدم</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- قائمة الكورسات -->
+                        <div class="row" id="coursesContainer">
+                            <!-- سيتم تعبئة الكورسات هنا -->
+                        </div>
+                    </div>
+
+                    <!-- تبويب الامتحانات والواجبات -->
+                    <div class="tab-pane fade" id="exams">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>الامتحانات والواجبات</h4>
+                            <div class="filter-section d-flex gap-2">
+                                <select class="form-select" id="examTypeFilter" style="width: auto;">
+                                    <option value="">جميع الأنواع</option>
+                                    <option value="exam">امتحان</option>
+                                    <option value="assignment">واجب</option>
+                                    <option value="quiz">اختبار قصير</option>
+                                </select>
+                                <select class="form-select" id="examCourseFilter" style="width: auto;">
+                                    <option value="">جميع الكورسات</option>
+                                </select>
+                                <input type="date" class="form-control" id="examDateFrom" style="width: auto;" placeholder="من تاريخ">
+                                <input type="date" class="form-control" id="examDateTo" style="width: auto;" placeholder="إلى تاريخ">
+                                <button class="btn btn-primary" onclick="filterExams()">
+                                    <i class="bi bi-funnel me-1"></i>تصفية
+                                </button>
+                                <button class="btn btn-success" onclick="exportExams()">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>تصدير
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>اسم الامتحان/الواجب</th>
+                                        <th>الكورس</th>
+                                        <th>النوع</th>
+                                        <th>التاريخ</th>
+                                        <th>عدد المشاركين</th>
+                                        <th>متوسط الدرجات</th>
+                                        <th>الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="examsTable">
+                                    <!-- سيتم تعبئة الامتحانات هنا -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- تبويب التقارير والإحصائيات -->
+                    <div class="tab-pane fade" id="reports">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>التقارير والإحصائيات</h4>
+                            <div class="export-buttons">
+                                <button class="btn btn-success" onclick="generateReport()">
+                                    <i class="bi bi-plus-circle me-1"></i>إنشاء تقرير جديد
+                                </button>
+                                <button class="btn btn-primary" onclick="exportToPDF()">
+                                    <i class="bi bi-file-pdf me-1"></i>تصدير PDF
+                                </button>
+                                <button class="btn btn-success" onclick="exportToExcel()">
+                                    <i class="bi bi-file-excel me-1"></i>تصدير Excel
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-3 mb-4">
+                                <div class="card h-100 card-hover">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-primary" id="totalStudentsCount">0</h3>
+                                        <p class="text-muted">إجمالي الطلاب</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-4">
+                                <div class="card h-100 card-hover">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-success" id="activeStudentsCount">0</h3>
+                                        <p class="text-muted">الطلاب النشطين</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-4">
+                                <div class="card h-100 card-hover">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-info" id="completionRate">0%</h3>
+                                        <p class="text-muted">معدل إتمام الكورسات</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-4">
+                                <div class="card h-100 card-hover">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-warning" id="avgGrade">0</h3>
+                                        <p class="text-muted">متوسط الدرجات</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- رسم بياني شهري -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="chart-container">
+                                    <h5 class="mb-3">التقدم الشهري - آخر 6 أشهر</h5>
+                                    <canvas id="monthlyProgressChart" height="150"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- إحصائيات الكورسات -->
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card h-100 card-hover">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-success" id="popularCourse">--</h3>
+                                        <p class="text-muted">الكورس الأكثر شعبية</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <h5 class="mb-3">توزيع الطلاب حسب المستوى</h5>
+                                    <canvas id="studentsLevelChart" height="150"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- تبويب الإيرادات -->
+                    <div class="tab-pane fade" id="revenue">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>إدارة الإيرادات</h4>
+                            <div class="filter-section d-flex gap-2">
+                                <select class="form-select" id="revenuePeriodFilter" style="width: auto;">
+                                    <option value="monthly">شهري</option>
+                                    <option value="quarterly">ربع سنوي</option>
+                                    <option value="yearly">سنوي</option>
+                                </select>
+                                <select class="form-select" id="revenueCourseFilter" style="width: auto;">
+                                    <option value="">جميع الكورسات</option>
+                                </select>
+                                <input type="month" class="form-control" id="revenueMonth" style="width: auto;">
+                                <button class="btn btn-primary" onclick="filterRevenue()">
+                                    <i class="bi bi-funnel me-1"></i>تصفية
+                                </button>
+                                <button class="btn btn-success" onclick="exportRevenue()">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>تصدير
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="chart-container">
+                                    <h5 class="mb-3">الإيرادات الشهرية</h5>
+                                    <canvas id="revenueChart" height="250"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="chart-container">
+                                    <h5 class="mb-3">توزيع الإيرادات حسب الكورس</h5>
+                                    <canvas id="revenueByCourseChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="chart-container">
+                                    <h5 class="mb-3">تفاصيل الإيرادات</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>الكورس</th>
+                                                    <th>عدد المشتركين</th>
+                                                    <th>الإيرادات</th>
+                                                    <th>التكلفة</th>
+                                                    <th>صافي الربح</th>
+                                                    <th>معدل الربحية</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="revenueTable">
+                                                <!-- سيتم تعبئة الإيرادات هنا -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- تبويب المستخدمين -->
+                    <div class="tab-pane fade" id="users">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>إدارة المستخدمين</h4>
+                            <div class="filter-section d-flex gap-2">
+                                <select class="form-select" id="userRoleFilter" style="width: auto;">
+                                    <option value="">جميع الصلاحيات</option>
+                                    <option value="admin">مسؤول</option>
+                                    <option value="instructor">مدرب</option>
+                                    <option value="student">طالب</option>
+                                </select>
+                                <select class="form-select" id="userStatusFilter" style="width: auto;">
+                                    <option value="">جميع الحالات</option>
+                                    <option value="active">نشط</option>
+                                    <option value="inactive">غير نشط</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="filterUsers()">
+                                    <i class="bi bi-funnel me-1"></i>تصفية
+                                </button>
+                                <button class="btn btn-success" onclick="exportUsers()">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>تصدير
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>اسم المستخدم</th>
+                                        <th>البريد الإلكتروني</th>
+                                        <th>نوع الحساب</th>
+                                        <th>الحالة</th>
+                                        <th>تاريخ التسجيل</th>
+                                        <th>الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTable">
+                                    <!-- سيتم تعبئة المستخدمين هنا -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- تبويب الإشعارات -->
+                    <div class="tab-pane fade" id="notifications">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card card-hover">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0"><i class="bi bi-send me-2"></i>إرسال إشعار جديد</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="notificationForm">
+                                            <div class="mb-3">
+                                                <label class="form-label">عنوان الإشعار</label>
+                                                <input type="text" class="form-control" id="notificationTitle" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">نص الإشعار</label>
+                                                <textarea class="form-control" id="notificationMessage" rows="3" required></textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">نوع الإشعار</label>
+                                                <select class="form-select" id="notificationType">
+                                                    <option value="info">معلومات</option>
+                                                    <option value="success">نجاح</option>
+                                                    <option value="warning">تحذير</option>
+                                                    <option value="error">خطأ</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">المستخدم المستهدف</label>
+                                                <select class="form-select" id="notificationUser">
+                                                    <option value="all">جميع المستخدمين</option>
+                                                    <!-- سيتم تعبئة المستخدمين هنا -->
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">رابط الإجراء (اختياري)</label>
+                                                <input type="url" class="form-control" id="notificationActionUrl" placeholder="https://example.com/action">
+                                            </div>
+                                            <button type="submit" class="btn btn-primary w-100">
+                                                <i class="bi bi-send me-1"></i>إرسال الإشعار
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card card-hover">
+                                    <div class="card-header bg-info text-white">
+                                        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>سجل الإشعارات المرسلة</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="notificationsHistory" style="max-height: 400px; overflow-y: auto;">
+                                            <!-- سيتم تعبئة سجل الإشعارات هنا -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- تبويب سجل الأنشطة -->
+                    <div class="tab-pane fade" id="activity-logs">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>سجل الأنشطة</h4>
+                            <div class="filter-section d-flex gap-2">
+                                <select class="form-select" id="activityUserFilter" style="width: auto;">
+                                    <option value="">جميع المستخدمين</option>
+                                </select>
+                                <select class="form-select" id="activityActionFilter" style="width: auto;">
+                                    <option value="">جميع الإجراءات</option>
+                                    <option value="login">تسجيل دخول</option>
+                                    <option value="create">إنشاء</option>
+                                    <option value="update">تحديث</option>
+                                    <option value="delete">حذف</option>
+                                </select>
+                                <input type="date" class="form-control" id="activityDateFrom" style="width: auto;" placeholder="من تاريخ">
+                                <input type="date" class="form-control" id="activityDateTo" style="width: auto;" placeholder="إلى تاريخ">
+                                <button class="btn btn-primary" onclick="filterActivityLogs()">
+                                    <i class="bi bi-funnel me-1"></i>تصفية
+                                </button>
+                                <button class="btn btn-success" onclick="exportActivityLogs()">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>تصدير
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="card card-hover">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>المستخدم</th>
+                                                <th>الإجراء</th>
+                                                <th>الوصف</th>
+                                                <th>عنوان IP</th>
+                                                <th>التاريخ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="activityLogsTable">
+                                            <!-- سيتم تعبئة سجل الأنشطة هنا -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- المودالات -->
+    <!-- مودال إضافة كورس -->
+    <div class="modal fade modal-blur" id="addCourseModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content modal-scale">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">إضافة كورس جديد</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCourseForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">اسم الكورس *</label>
+                                    <input type="text" class="form-control" name="name" required placeholder="أدخل اسم الكورس">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">التصنيف *</label>
+                                    <select class="form-select" name="category" required>
+                                        <option value="">اختر التصنيف</option>
+                                        <option value="programming">برمجة</option>
+                                        <option value="design">تصميم</option>
+                                        <option value="marketing">تسويق</option>
+                                        <option value="language">لغات</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">المستوى *</label>
+                                    <select class="form-select" name="level" required>
+                                        <option value="">اختر المستوى</option>
+                                        <option value="beginner">مبتدئ</option>
+                                        <option value="intermediate">متوسط</option>
+                                        <option value="advanced">متقدم</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">السعر (ج.م) *</label>
+                                    <input type="number" class="form-control" name="price" required min="0" placeholder="أدخل السعر">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">المدة (أسابيع) *</label>
+                                    <input type="number" class="form-control" name="duration" required min="1" placeholder="أدخل المدة">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">صورة الكورس (URL)</label>
+                                    <input type="url" class="form-control" name="image" placeholder="https://example.com/course.jpg">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">الوصف</label>
+                            <textarea class="form-control" name="description" rows="3" placeholder="أدخل وصف الكورس"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">المميزات (افصل بينها بفاصلة)</label>
+                            <input type="text" class="form-control" name="features" placeholder="فيديوهات تعليمية, تمارين تفاعلية, شهادة معتمدة...">
+                            <div class="form-text">أدخل مميزات الكورس مفصولة بفاصلة</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-success" onclick="addCourse()">إضافة الكورس</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال تعديل الكورس -->
+    <div class="modal fade modal-blur" id="editCourseModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content modal-scale">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil me-2"></i>تعديل بيانات الكورس
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="editCourseContent">
+                    <!-- سيتم تعبئة النموذج هنا -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال تفاصيل الطالب -->
+    <div class="modal fade modal-blur" id="studentDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content modal-scale">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">تفاصيل الطالب</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="studentDetailsContent">
+                    <!-- سيتم تعبئة التفاصيل هنا -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال تفاصيل الكورس -->
+    <div class="modal fade modal-blur" id="courseDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content modal-scale">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">تفاصيل الكورس</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="courseDetailsContent">
+                    <!-- سيتم تعبئة التفاصيل هنا -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال تأكيد الحذف -->
+    <div class="modal fade modal-blur" id="confirmDeleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content modal-scale">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">تأكيد الحذف</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="deleteMessage">هل أنت متأكد من الحذف؟</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">تأكيد الحذف</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال المساعدة -->
+    <div class="modal fade modal-blur" id="helpModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content modal-scale">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-question-circle me-2"></i>مركز المساعدة
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>الدوال المتاحة:</h6>
+                            <ul class="list-group">
+                                <li class="list-group-item">✅ loadStudents() - تحميل الطلاب</li>
+                                <li class="list-group-item">✅ loadCourses() - تحميل الكورسات</li>
+                                <li class="list-group-item">✅ loadExams() - تحميل الامتحانات</li>
+                                <li class="list-group-item">✅ loadReports() - تحميل التقارير</li>
+                                <li class="list-group-item">✅ loadRevenue() - تحميل الإيرادات</li>
+                                <li class="list-group-item">✅ sendNotification() - إرسال إشعارات</li>
+                                <li class="list-group-item">✅ loadActivityLogs() - سجل الأنشطة</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>الإجراءات السريعة:</h6>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary" onclick="refreshAll()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>تحديث الكل
+                                </button>
+                                <button class="btn btn-outline-success" onclick="exportData()">
+                                    <i class="bi bi-download me-1"></i>تصدير البيانات
+                                </button>
+                                <button class="btn btn-outline-info" onclick="showSystemInfo()">
+                                    <i class="bi bi-info-circle me-1"></i>معلومات النظام
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // المتغيرات العامة
+        let selectedStudentId = 'all';
+        let currentUserData = null;
+        let systemInitialized = false;
+
+        // النظام الإداري التعليمي
+        class EducationManagementSystem {
+            constructor() {
+                this.currentUser = null;
+                this.userRole = '';
+                this.allStudents = [];
+                this.allCourses = [];
+                this.allExams = [];
+                this.allUsers = [];
+                this.revenueData = [];
+                this.systemMetrics = {};
+                this.charts = {};
+                this.currentDeleteAction = null;
+                this.notifications = [];
+                this.activityLogs = [];
+                
+                this.init();
+            }
+
+            async init() {
+                console.log('🚀 بدء تهيئة النظام التعليمي...');
+                
+                // استخدام بيانات localStorage أولاً
+                const userData = this.loadUserData();
+                if (userData.userId) {
+                    this.currentUser = userData;
+                    this.userRole = userData.role;
+                    console.log('✅ تم تحميل بيانات المستخدم من localStorage');
+                }
+                
+                this.setupEventListeners();
+                await this.loadInitialData();
+                this.initializeCharts();
+                this.startAutoRefresh();
+                
+                systemInitialized = true;
+                console.log('✅ تم تهيئة النظام التعليمي بنجاح');
+            }
+
+            // تحميل البيانات الأولية
+            async loadInitialData() {
+                console.log('📊 بدء تحميل البيانات الأولية...');
+                
+                await this.loadStudents();
+                await this.loadCourses();
+                await this.loadExams();
+                await this.loadUsers();
+                await this.loadRevenue();
+                await this.loadSystemMetrics();
+                await this.loadNotifications();
+                await this.loadActivityLogs();
+                
+                console.log('✅ تم تحميل البيانات الأولية بنجاح');
+            }
+
+            // تحميل الطلاب
+            async loadStudents() {
+                try {
+                    this.showLoading('studentsTable', 'جاري تحميل الطلاب...');
+                    
+                    // محاكاة لطلب API
+                    this.allStudents = this.getMockStudents();
+                    this.updateStudentsTable(this.allStudents);
+                    this.populateStudentSelector();
+                    this.updateStats();
+                    
+                    console.log('✅ تم تحميل الطلاب:', this.allStudents.length);
+                } catch (error) {
+                    console.error('❌ خطأ في تحميل الطلاب:', error);
+                    this.allStudents = this.getMockStudents();
+                    this.updateStudentsTable(this.allStudents);
+                    this.populateStudentSelector();
+                    this.showAlert('تم تحميل بيانات تجريبية للطلاب', 'info');
+                }
+            }
+
+            // تحديث جدول الطلاب
+            updateStudentsTable(students) {
+                const table = document.getElementById('studentsTable');
+                if (students.length === 0) {
+                    table.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">لا توجد طلاب</td></tr>';
+                    return;
+                }
+
+                table.innerHTML = students.map((student, index) => `
+                    <tr class="fade-in">
+                        <td>${index + 1}</td>
+                        <td>${student.name}</td>
+                        <td>${student.email}</td>
+                        <td>${student.courses_count}</td>
+                        <td>
+                            <span class="badge ${this.getLevelBadgeClass(student.level)}">
+                                ${this.getLevelText(student.level)}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge ${student.status === 'active' ? 'bg-success' : 'bg-danger'}">
+                                ${student.status === 'active' ? 'نشط' : 'غير نشط'}
+                            </span>
+                        </td>
+                        <td>${new Date(student.registration_date).toLocaleDateString('ar-EG')}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-info btn-sm" onclick="educationSystem.showStudentDetails('${student.id}')">
+                                <i class="bi bi-eye"></i> تفاصيل
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="educationSystem.toggleStudentStatus('${student.id}', ${student.status === 'active'})">
+                                <i class="bi ${student.status === 'active' ? 'bi-pause' : 'bi-play'}"></i> ${student.status === 'active' ? 'إيقاف' : 'تفعيل'}
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="educationSystem.confirmDelete('student', '${student.id}', '${student.name}')">
+                                <i class="bi bi-trash"></i> حذف
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // تحميل الكورسات
+            async loadCourses() {
+                try {
+                    this.showLoading('coursesContainer', 'جاري تحميل الكورسات...');
+                    
+                    // محاكاة لطلب API
+                    this.allCourses = this.getMockCourses();
+                    this.displayCourses();
+                    this.updateStats();
+                    this.populateCourseFilters();
+                    
+                    console.log('✅ تم تحميل الكورسات:', this.allCourses.length);
+                } catch (error) {
+                    console.error('❌ خطأ في تحميل الكورسات:', error);
+                    this.allCourses = this.getMockCourses();
+                    this.displayCourses();
+                    this.populateCourseFilters();
+                    this.showAlert('تم تحميل بيانات تجريبية للكورسات', 'info');
+                }
+            }
+
+            // عرض الكورسات
+            displayCourses() {
+                const container = document.getElementById('coursesContainer');
+                
+                if (this.allCourses.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12">
+                            <div class="empty-state">
+                                <i class="bi bi-journal-bookmark"></i>
+                                <h5>لا توجد كورسات</h5>
+                                <p>يمكنك إضافة كورسات جديدة للنظام</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = this.allCourses.map(course => `
+                    <div class="col-lg-6 col-xl-4 mb-4 fade-in">
+                        <div class="course-card card-hover">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="mb-0">${course.name}</h5>
+                                <span class="badge ${this.getLevelBadgeClass(course.level)}">${this.getLevelText(course.level)}</span>
+                            </div>
+                            <p class="text-muted mb-2">${course.description}</p>
+                            <div class="course-stats">
+                                <div class="course-stat">
+                                    <div class="course-stat-number">${course.students_count}</div>
+                                    <div class="course-stat-label">الطلاب</div>
+                                </div>
+                                <div class="course-stat">
+                                    <div class="course-stat-number">${course.duration}</div>
+                                    <div class="course-stat-label">أسبوع</div>
+                                </div>
+                                <div class="course-stat">
+                                    <div class="course-stat-number">${course.price}</div>
+                                    <div class="course-stat-label">ج.م</div>
+                                </div>
+                            </div>
+                            <div class="quick-actions">
+                                <button class="btn btn-outline-primary quick-action-btn" onclick="educationSystem.showCourseDetails('${course.id}')">
+                                    تفاصيل
+                                </button>
+                                <button class="btn btn-outline-info quick-action-btn" onclick="educationSystem.editCourse('${course.id}')">
+                                    <i class="bi bi-pencil me-1"></i>تعديل
+                                </button>
+                                <button class="btn btn-outline-danger quick-action-btn" onclick="educationSystem.confirmDelete('course', '${course.id}', '${course.name}')">
+                                    <i class="bi bi-trash me-1"></i>حذف
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // تحميل الامتحانات
+            async loadExams() {
+                try {
+                    this.showLoading('examsTable', 'جاري تحميل الامتحانات...');
+                    
+                    // محاكاة لطلب API
+                    this.allExams = this.getMockExams();
+                    this.updateExamsTable(this.allExams);
+                    
+                    console.log('✅ تم تحميل الامتحانات:', this.allExams.length);
+                } catch (error) {
+                    console.error('❌ خطأ في تحميل الامتحانات:', error);
+                    this.allExams = this.getMockExams();
+                    this.updateExamsTable(this.allExams);
+                    this.showAlert('تم تحميل بيانات تجريبية للامتحانات', 'info');
+                }
+            }
+
+            // تحديث جدول الامتحانات
+            updateExamsTable(exams) {
+                const table = document.getElementById('examsTable');
+                if (exams.length === 0) {
+                    table.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">لا توجد امتحانات</td></tr>';
+                    return;
+                }
+
+                table.innerHTML = exams.map((exam, index) => `
+                    <tr class="fade-in">
+                        <td>${index + 1}</td>
+                        <td>${exam.name}</td>
+                        <td>${exam.course_name}</td>
+                        <td>
+                            <span class="badge ${this.getExamTypeBadgeClass(exam.type)}">
+                                ${this.getExamTypeText(exam.type)}
+                            </span>
+                        </td>
+                        <td>${new Date(exam.date).toLocaleDateString('ar-EG')}</td>
+                        <td>${exam.participants_count}</td>
+                        <td>${exam.average_grade}%</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-info btn-sm" onclick="educationSystem.showExamDetails('${exam.id}')">
+                                <i class="bi bi-eye"></i> تفاصيل
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="educationSystem.exportExamResults('${exam.id}')">
+                                <i class="bi bi-download"></i> تصدير
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // تحميل المستخدمين
+            async loadUsers() {
+                try {
+                    this.showLoading('usersTable', 'جاري تحميل المستخدمين...');
+                    
+                    // محاكاة لطلب API
+                    this.allUsers = this.getMockUsers();
+                    this.updateUsersTable(this.allUsers);
+                    this.populateNotificationUsers();
+                    this.populateActivityUserFilter();
+                    
+                    console.log('✅ تم تحميل المستخدمين:', this.allUsers.length);
+                } catch (error) {
+                    console.error('❌ خطأ في تحميل المستخدمين:', error);
+                    this.allUsers = this.getMockUsers();
+                    this.updateUsersTable(this.allUsers);
+                    this.populateNotificationUsers();
+                    this.populateActivityUserFilter();
+                    this.showAlert('تم تحميل بيانات تجريبية للمستخدمين', 'info');
+                }
+            }
+
+            // تحديث جدول المستخدمين
+            updateUsersTable(users) {
+                const table = document.getElementById('usersTable');
+                if (users.length === 0) {
+                    table.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">لا توجد مستخدمين</td></tr>';
+                    return;
+                }
+
+                table.innerHTML = users.map((user, index) => `
+                    <tr class="fade-in">
+                        <td>${index + 1}</td>
+                        <td>${user.name}</td>
+                        <td>${user.email}</td>
+                        <td>
+                            <span class="badge ${this.getRoleBadgeClass(user.role)}">
+                                ${this.getRoleText(user.role)}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge ${user.status === 'active' ? 'bg-success' : 'bg-danger'}">
+                                ${user.status === 'active' ? 'نشط' : 'غير نشط'}
+                            </span>
+                        </td>
+                        <td>${new Date(user.registration_date).toLocaleDateString('ar-EG')}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-warning btn-sm" onclick="educationSystem.toggleUserStatus('${user.id}', ${user.status === 'active'})">
+                                <i class="bi ${user.status === 'active' ? 'bi-pause' : 'bi-play'}"></i> ${user.status === 'active' ? 'إيقاف' : 'تفعيل'}
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="educationSystem.confirmDelete('user', '${user.id}', '${user.name}')">
+                                <i class="bi bi-trash"></i> حذف
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // تحميل الإيرادات
+            async loadRevenue() {
+                try {
+                    // محاكاة لطلب API
+                    this.revenueData = this.getMockRevenueData();
+                    this.updateRevenueTable(this.revenueData);
+                    this.updateRevenueCharts();
+                    
+                    console.log('✅ تم تحميل بيانات الإيرادات');
+                } catch (error) {
+                    console.error('❌ خطأ في تحميل الإيرادات:', error);
+                    this.revenueData = this.getMockRevenueData();
+                    this.updateRevenueTable(this.revenueData);
+                    this.updateRevenueCharts();
+                    this.showAlert('تم تحميل بيانات تجريبية للإيرادات', 'info');
+                }
+            }
+
+            // تحديث جدول الإيرادات
+            updateRevenueTable(revenueData) {
+                const table = document.getElementById('revenueTable');
+                if (revenueData.length === 0) {
+                    table.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">لا توجد بيانات للإيرادات</td></tr>';
+                    return;
+                }
+
+                table.innerHTML = revenueData.map((item, index) => {
+                    const profit = item.revenue - item.cost;
+                    const profitRate = ((profit / item.cost) * 100).toFixed(2);
+                    
+                    return `
+                    <tr class="fade-in">
+                        <td>${index + 1}</td>
+                        <td>${item.course_name}</td>
+                        <td>${item.students_count}</td>
+                        <td>${item.revenue} ج.م</td>
+                        <td>${item.cost} ج.م</td>
+                        <td class="${profit >= 0 ? 'text-success' : 'text-danger'}">${profit} ج.م</td>
+                        <td class="${profitRate >= 0 ? 'text-success' : 'text-danger'}">${profitRate}%</td>
+                    </tr>
+                `}).join('');
+            }
+
+            // تحميل إحصائيات النظام
+            async loadSystemMetrics() {
+                try {
+                    // محاكاة لطلب API
+                    this.systemMetrics = this.getMockSystemMetrics();
+                    this.updateSystemMetrics(this.systemMetrics);
+                    
+                    console.log('✅ تم تحميل إحصائيات النظام');
+                } catch (error) {
+                    console.error('❌ خطأ في تحميل إحصائيات النظام:', error);
+                    this.systemMetrics = this.getMockSystemMetrics();
+                    this.updateSystemMetrics(this.systemMetrics);
+                }
+            }
+
+            // تحديث إحصائيات النظام
+            updateSystemMetrics(metrics) {
+                document.getElementById('totalStudents').textContent = metrics.total_students || 0;
+                document.getElementById('totalCourses').textContent = metrics.total_courses || 0;
+                document.getElementById('totalExams').textContent = metrics.total_exams || 0;
+                document.getElementById('totalRevenue').textContent = metrics.total_revenue || 0;
+                
+                document.getElementById('totalStudentsCount').textContent = metrics.total_students || 0;
+                document.getElementById('activeStudentsCount').textContent = metrics.active_students || 0;
+                document.getElementById('completionRate').textContent = metrics.completion_rate || '0%';
+                document.getElementById('avgGrade').textContent = metrics.avg_grade || 0;
+                document.getElementById('popularCourse').textContent = metrics.popular_course || '--';
+                
+                // تحديث الرسوم البيانية
+                this.updateChartsWithMetrics(metrics);
+                console.log('✅ تم تحديث إحصائيات النظام');
+            }
+
+            // تحميل الإشعارات
+            async loadNotifications() {
+                try {
+                    // محاكاة لطلب API
+                    this.notifications = this.getMockNotifications();
+                    this.updateNotificationsHistory();
+                    
+                    console.log('✅ تم تحميل الإشعارات:', this.notifications.length);
+                } catch (error) {
+                    console.error('❌ خطأ في تحميل الإشعارات:', error);
+                    this.notifications = this.getMockNotifications();
+                    this.updateNotificationsHistory();
+                }
+            }
+
+            // تحديث سجل الإشعارات
+            updateNotificationsHistory() {
+                const container = document.getElementById('notificationsHistory');
+                if (this.notifications.length === 0) {
+                    container.innerHTML = '<div class="text-center text-muted py-4">لا توجد إشعارات مرسلة</div>';
+                    return;
+                }
+
+                container.innerHTML = this.notifications.map(notification => `
+                    <div class="notification-item p-3 bg-light rounded mb-2 fade-in">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">${notification.title}</h6>
+                                <p class="mb-1">${notification.message}</p>
+                                <small class="text-muted">
+                                    ${notification.user_id === 'all' ? 'لجميع المستخدمين' : `لمستخدم: ${notification.user?.name || 'محدد'}`}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge ${this.getNotificationTypeBadge(notification.type)}">${this.getNotificationTypeText(notification.type)}</span>
+                                <br>
+                                <small class="text-muted">${new Date(notification.created_at).toLocaleDateString('ar-EG')}</small>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // تحميل سجل الأنشطة
+            async loadActivityLogs() {
+                try {
+                    this.showLoading('activityLogsTable', 'جاري تحميل سجل الأنشطة...');
+                    
+                    // محاكاة لطلب API
+                    this.activityLogs = this.getMockActivityLogs();
+                    this.updateActivityLogsTable(this.activityLogs);
+                    
+                    console.log('✅ تم تحميل سجل الأنشطة:', this.activityLogs.length);
+                } catch (error) {
+                    console.error('❌ خطأ في تحميل سجل الأنشطة:', error);
+                    this.activityLogs = this.getMockActivityLogs();
+                    this.updateActivityLogsTable(this.activityLogs);
+                    this.showAlert('تم تحميل بيانات تجريبية لسجل الأنشطة', 'info');
+                }
+            }
+
+            // تحديث جدول سجل الأنشطة
+            updateActivityLogsTable(logs) {
+                const table = document.getElementById('activityLogsTable');
+                if (logs.length === 0) {
+                    table.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">لا توجد أنشطة مسجلة</td></tr>';
+                    return;
+                }
+
+                table.innerHTML = logs.map((log, index) => `
+                    <tr class="fade-in">
+                        <td>${index + 1}</td>
+                        <td>${log.user_id ? (log.user?.name || `مستخدم ${log.user_id}`) : 'النظام'}</td>
+                        <td>${log.action}</td>
+                        <td>${log.description}</td>
+                        <td>${log.ip_address || 'غير متوفر'}</td>
+                        <td>${new Date(log.created_at).toLocaleString('ar-EG')}</td>
+                    </tr>
+                `).join('');
+            }
+
+            // إعداد الرسوم البيانية
+            initializeCharts() {
+                console.log('📊 بدء تهيئة الرسوم البيانية...');
+                
+                // رسم بياني لتقدم الطلاب
+                const studentsProgressCtx = document.getElementById('studentsProgressChart')?.getContext('2d');
+                if (studentsProgressCtx) {
+                    this.charts.studentsProgress = new Chart(studentsProgressCtx, {
+                        type: 'line',
+                        data: {
+                            labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30'],
+                            datasets: [{
+                                label: 'عدد الطلاب النشطين',
+                                data: Array(30).fill(0).map(() => Math.floor(Math.random() * 20) + 5),
+                                borderColor: '#1a7f46',
+                                backgroundColor: 'rgba(26, 127, 70, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                title: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // رسم بياني لتوزيع الكورسات
+                const coursesCtx = document.getElementById('coursesChart')?.getContext('2d');
+                if (coursesCtx) {
+                    this.charts.courses = new Chart(coursesCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['برمجة', 'تصميم', 'تسويق', 'لغات'],
+                            datasets: [{
+                                data: [40, 25, 20, 15],
+                                backgroundColor: [
+                                    '#1a7f46',
+                                    '#2ecc71',
+                                    '#3498db',
+                                    '#f39c12'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // رسم بياني للتقدم الشهري
+                const monthlyProgressCtx = document.getElementById('monthlyProgressChart')?.getContext('2d');
+                if (monthlyProgressCtx) {
+                    this.charts.monthlyProgress = new Chart(monthlyProgressCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'],
+                            datasets: [{
+                                label: 'عدد الطلاب الجدد',
+                                data: [25, 30, 45, 35, 50, 60],
+                                backgroundColor: '#1a7f46'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // رسم بياني لتوزيع الطلاب حسب المستوى
+                const studentsLevelCtx = document.getElementById('studentsLevelChart')?.getContext('2d');
+                if (studentsLevelCtx) {
+                    this.charts.studentsLevel = new Chart(studentsLevelCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: ['مبتدئ', 'متوسط', 'متقدم'],
+                            datasets: [{
+                                data: [50, 30, 20],
+                                backgroundColor: [
+                                    '#1a7f46',
+                                    '#2ecc71',
+                                    '#3498db'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // رسم بياني للإيرادات
+                const revenueCtx = document.getElementById('revenueChart')?.getContext('2d');
+                if (revenueCtx) {
+                    this.charts.revenue = new Chart(revenueCtx, {
+                        type: 'line',
+                        data: {
+                            labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'],
+                            datasets: [{
+                                label: 'الإيرادات (ألف جنيه)',
+                                data: [120, 150, 180, 200, 170, 220],
+                                borderColor: '#1a7f46',
+                                backgroundColor: 'rgba(26, 127, 70, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // رسم بياني لتوزيع الإيرادات حسب الكورس
+                const revenueByCourseCtx = document.getElementById('revenueByCourseChart')?.getContext('2d');
+                if (revenueByCourseCtx) {
+                    this.charts.revenueByCourse = new Chart(revenueByCourseCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['برمجة', 'تصميم', 'تسويق', 'لغات'],
+                            datasets: [{
+                                data: [45, 25, 20, 10],
+                                backgroundColor: [
+                                    '#1a7f46',
+                                    '#2ecc71',
+                                    '#3498db',
+                                    '#f39c12'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                }
+                            }
+                        }
+                    });
+                }
+
+                console.log('✅ تم تهيئة الرسوم البيانية بنجاح');
+            }
+
+            // تحديث الرسوم البيانية بالإحصائيات
+            updateChartsWithMetrics(metrics) {
+                if (this.charts.monthlyProgress && metrics.monthly_data) {
+                    this.charts.monthlyProgress.data.datasets[0].data = metrics.monthly_data.new_students || [];
+                    this.charts.monthlyProgress.update();
+                }
+                
+                if (this.charts.studentsLevel && metrics.students_by_level) {
+                    this.charts.studentsLevel.data.datasets[0].data = [
+                        metrics.students_by_level.beginner || 0,
+                        metrics.students_by_level.intermediate || 0,
+                        metrics.students_by_level.advanced || 0
+                    ];
+                    this.charts.studentsLevel.update();
+                }
+            }
+
+            // تحديث رسوم بيانية الإيرادات
+            updateRevenueCharts() {
+                if (this.charts.revenue && this.revenueData.monthly) {
+                    this.charts.revenue.data.datasets[0].data = this.revenueData.monthly.revenues || [];
+                    this.charts.revenue.update();
+                }
+                
+                if (this.charts.revenueByCourse && this.revenueData.by_course) {
+                    this.charts.revenueByCourse.data.datasets[0].data = this.revenueData.by_course.values || [];
+                    this.charts.revenueByCourse.data.labels = this.revenueData.by_course.labels || [];
+                    this.charts.revenueByCourse.update();
+                }
+            }
+
+            // تعبئة محدد الطالب
+            populateStudentSelector() {
+                const selector = document.getElementById('studentSelector');
+                selector.innerHTML = '<option value="all">عرض جميع الطلاب</option>';
+                
+                this.allStudents.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = student.id;
+                    option.textContent = student.name;
+                    selector.appendChild(option);
+                });
+                
+                if (selectedStudentId) {
+                    selector.value = selectedStudentId;
+                }
+                
+                this.updateSelectedStudentInfo();
+                console.log('🎯 تم تعبئة محدد الطلاب:', this.allStudents.length);
+            }
+
+            // تحديث معلومات الطالب المحدد
+            updateSelectedStudentInfo() {
+                const infoElement = document.getElementById('selectedStudentInfo');
+                
+                if (selectedStudentId === 'all') {
+                    infoElement.textContent = `(${this.allStudents.length} طالب)`;
+                } else {
+                    const student = this.allStudents.find(s => s.id === selectedStudentId);
+                    infoElement.textContent = student ? `(${student.name})` : '';
+                }
+            }
+
+            // تعبئة فلاتر الكورسات
+            populateCourseFilters() {
+                const courseFilter = document.getElementById('examCourseFilter');
+                const revenueCourseFilter = document.getElementById('revenueCourseFilter');
+                
+                courseFilter.innerHTML = '<option value="">جميع الكورسات</option>';
+                revenueCourseFilter.innerHTML = '<option value="">جميع الكورسات</option>';
+                
+                this.allCourses.forEach(course => {
+                    courseFilter.innerHTML += `<option value="${course.id}">${course.name}</option>`;
+                    revenueCourseFilter.innerHTML += `<option value="${course.id}">${course.name}</option>`;
+                });
+            }
+
+            // تعبئة قائمة المستخدمين في الإشعارات
+            populateNotificationUsers() {
+                const select = document.getElementById('notificationUser');
+                select.innerHTML = '<option value="all">جميع المستخدمين</option>';
+                
+                this.allUsers.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = `${user.name} (${this.getRoleText(user.role)})`;
+                    select.appendChild(option);
+                });
+            }
+
+            // تعبئة قائمة المستخدمين في فلتر سجل الأنشطة
+            populateActivityUserFilter() {
+                const select = document.getElementById('activityUserFilter');
+                select.innerHTML = '<option value="">جميع المستخدمين</option>';
+                
+                this.allUsers.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = `${user.name} (${this.getRoleText(user.role)})`;
+                    select.appendChild(option);
+                });
+            }
+
+            // تحديث الإحصائيات
+            updateStats() {
+                const totalStudents = this.allStudents.length;
+                const totalCourses = this.allCourses.length;
+                const totalExams = this.allExams.length;
+                const totalRevenue = this.revenueData.total || 0;
+
+                // تحديث الإحصائيات في لوحة التحكم
+                document.getElementById('totalStudents').textContent = totalStudents;
+                document.getElementById('totalCourses').textContent = totalCourses;
+                document.getElementById('totalExams').textContent = totalExams;
+                document.getElementById('totalRevenue').textContent = totalRevenue;
+
+                // تحديث الطلاب المتميزين
+                this.updateTopStudents();
+            }
+
+            // تحديث الطلاب المتميزين
+            updateTopStudents() {
+                const table = document.getElementById('topStudentsTable');
+                const topStudents = this.allStudents
+                    .filter(s => s.status === 'active')
+                    .sort((a, b) => (b.average_grade || 0) - (a.average_grade || 0))
+                    .slice(0, 5);
+
+                if (topStudents.length === 0) {
+                    table.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">لا توجد بيانات</td></tr>';
+                    return;
+                }
+
+                table.innerHTML = topStudents.map(student => `
+                    <tr class="fade-in">
+                        <td>${student.name}</td>
+                        <td>${student.current_course || 'لا يوجد'}</td>
+                        <td>
+                            <span class="badge ${this.getLevelBadgeClass(student.level)}">
+                                ${this.getLevelText(student.level)}
+                            </span>
+                        </td>
+                        <td>${student.last_exam_grade || '--'}%</td>
+                        <td>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: ${student.average_grade || 0}%" 
+                                     aria-valuenow="${student.average_grade || 0}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+                            <small>${student.average_grade || 0}%</small>
+                        </td>
+                        <td>
+                            <button class="btn btn-info btn-sm" onclick="educationSystem.showStudentDetails('${student.id}')">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // دوال المساعدة
+            loadUserData() {
+                const userId = localStorage.getItem('userId') || '1';
+                const role = localStorage.getItem('userRole') || 'admin';
+                const username = localStorage.getItem('username') || 'مسؤول النظام';
+                const email = localStorage.getItem('userEmail') || 'admin@example.com';
+
+                currentUserData = {
+                    userId,
+                    role,
+                    username,
+                    email
+                };
+
+                console.log('📋 بيانات المستخدم المحملة:', currentUserData);
+                return currentUserData;
+            }
+
+            getLevelBadgeClass(level) {
+                const classes = {
+                    'beginner': 'bg-info',
+                    'intermediate': 'bg-warning',
+                    'advanced': 'bg-success'
+                };
+                return classes[level] || 'bg-secondary';
+            }
+
+            getLevelText(level) {
+                const texts = {
+                    'beginner': 'مبتدئ',
+                    'intermediate': 'متوسط',
+                    'advanced': 'متقدم'
+                };
+                return texts[level] || level;
+            }
+
+            getExamTypeBadgeClass(type) {
+                const classes = {
+                    'exam': 'bg-danger',
+                    'assignment': 'bg-warning',
+                    'quiz': 'bg-info'
+                };
+                return classes[type] || 'bg-secondary';
+            }
+
+            getExamTypeText(type) {
+                const texts = {
+                    'exam': 'امتحان',
+                    'assignment': 'واجب',
+                    'quiz': 'اختبار قصير'
+                };
+                return texts[type] || type;
+            }
+
+            getRoleBadgeClass(role) {
+                const classes = {
+                    'admin': 'bg-danger',
+                    'instructor': 'bg-primary',
+                    'student': 'bg-secondary'
+                };
+                return classes[role] || 'bg-secondary';
+            }
+
+            getRoleText(role) {
+                const texts = {
+                    'admin': 'مسؤول',
+                    'instructor': 'مدرب',
+                    'student': 'طالب'
+                };
+                return texts[role] || role;
+            }
+
+            getCategoryText(category) {
+                const categories = {
+                    'programming': 'برمجة',
+                    'design': 'تصميم',
+                    'marketing': 'تسويق',
+                    'language': 'لغات'
+                };
+                return categories[category] || category;
+            }
+
+            getNotificationTypeBadge(type) {
+                const classes = {
+                    'info': 'bg-info',
+                    'success': 'bg-success',
+                    'warning': 'bg-warning',
+                    'error': 'bg-danger'
+                };
+                return classes[type] || 'bg-secondary';
+            }
+
+            getNotificationTypeText(type) {
+                const texts = {
+                    'info': 'معلومات',
+                    'success': 'نجاح',
+                    'warning': 'تحذير',
+                    'error': 'خطأ'
+                };
+                return texts[type] || type;
+            }
+
+            showAlert(message, type) {
+                const alertsContainer = document.getElementById('alertsContainer');
+                const alertId = 'alert-' + Date.now();
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type} alert-dismissible fade show bounce-in`;
+                alert.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                alertsContainer.appendChild(alert);
+                
+                // إضافة تأثيرات للتنبيهات المهمة
+                if (type === 'danger' || type === 'warning') {
+                    alert.classList.add('alert-pulse');
+                }
+                
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        alert.remove();
+                    }
+                }, 5000);
+            }
+
+            showLoading(containerId, message = 'جاري التحميل...') {
+                const container = document.getElementById(containerId);
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="loading-spinner mb-2"></div>
+                        <p class="text-muted">${message}</p>
+                    </div>
+                `;
+            }
+
+            // دوال الإجراءات
+            showStudentDetails(studentId) {
+                const student = this.allStudents.find(s => s.id === studentId);
+                if (!student) return;
+
+                const modalContent = document.getElementById('studentDetailsContent');
+                modalContent.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <div class="mb-3">
+                                <img src="${student.image || '/api/placeholder/150/150'}" class="rounded-circle" width="120" height="120" alt="${student.name}">
+                            </div>
+                            <h4>${student.name}</h4>
+                            <p class="text-muted">${student.email}</p>
+                            <span class="badge ${this.getLevelBadgeClass(student.level)}">
+                                ${this.getLevelText(student.level)}
+                            </span>
+                        </div>
+                        <div class="col-md-8">
+                            <h5>معلومات الطالب</h5>
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <strong>تاريخ التسجيل:</strong> ${new Date(student.registration_date).toLocaleDateString('ar-EG')}
+                                </div>
+                                <div class="col-6">
+                                    <strong>الحالة:</strong> 
+                                    <span class="badge ${student.status === 'active' ? 'bg-success' : 'bg-danger'}">
+                                        ${student.status === 'active' ? 'نشط' : 'غير نشط'}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <h5 class="mt-4">الكورسات المسجلة</h5>
+                            ${student.courses && student.courses.length > 0 ? `
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>الكورس</th>
+                                                <th>تاريخ التسجيل</th>
+                                                <th>التقدم</th>
+                                                <th>آخر درجة</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${student.courses.map(course => `
+                                                <tr>
+                                                    <td>${course.name}</td>
+                                                    <td>${new Date(course.enrollment_date).toLocaleDateString('ar-EG')}</td>
+                                                    <td>
+                                                        <div class="progress" style="height: 8px;">
+                                                            <div class="progress-bar" role="progressbar" 
+                                                                 style="width: ${course.progress || 0}%" 
+                                                                 aria-valuenow="${course.progress || 0}" 
+                                                                 aria-valuemin="0" aria-valuemax="100">
+                                                            </div>
+                                                        </div>
+                                                        <small>${course.progress || 0}%</small>
+                                                    </td>
+                                                    <td>${course.last_grade || '--'}%</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ` : '<p class="text-muted">لا توجد كورسات مسجلة</p>'}
+                            
+                            <h5 class="mt-4">الإحصائيات</h5>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <h4 class="text-primary mb-0">${student.courses_count || 0}</h4>
+                                        <small>الكورسات</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <h4 class="text-success mb-0">${student.completed_courses || 0}</h4>
+                                        <small>مكتملة</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2">
+                                        <h4 class="text-info mb-0">${student.average_grade || 0}%</h4>
+                                        <small>المتوسط</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                new bootstrap.Modal(document.getElementById('studentDetailsModal')).show();
+            }
+
+            showCourseDetails(courseId) {
+                const course = this.allCourses.find(c => c.id === courseId);
+                if (!course) return;
+
+                const modalContent = document.getElementById('courseDetailsContent');
+                modalContent.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h4>${course.name}</h4>
+                                    <p class="text-muted">${this.getCategoryText(course.category)}</p>
+                                    <span class="badge ${this.getLevelBadgeClass(course.level)}">
+                                        ${this.getLevelText(course.level)}
+                                    </span>
+                                    
+                                    <div class="mt-4">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>السعر:</span>
+                                            <strong>${course.price} ج.م</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>المدة:</span>
+                                            <strong>${course.duration} أسبوع</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>الطلاب:</span>
+                                            <strong>${course.students_count}</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>متوسط الدرجات:</span>
+                                            <strong>${course.average_grade || '--'}%</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h5>وصف الكورس</h5>
+                            <p>${course.description}</p>
+                            
+                            <h5 class="mt-4">المميزات</h5>
+                            <ul>
+                                ${course.features ? course.features.map(feature => `<li>${feature}</li>`).join('') : '<li>لا توجد مميزات محددة</li>'}
+                            </ul>
+                            
+                            <h5 class="mt-4">الامتحانات والواجبات</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>الاسم</th>
+                                            <th>النوع</th>
+                                            <th>التاريخ</th>
+                                            <th>المشاركين</th>
+                                            <th>المتوسط</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${this.allExams
+                                            .filter(exam => exam.course_id === courseId)
+                                            .map(exam => `
+                                                <tr>
+                                                    <td>${exam.name}</td>
+                                                    <td>
+                                                        <span class="badge ${this.getExamTypeBadgeClass(exam.type)}">
+                                                            ${this.getExamTypeText(exam.type)}
+                                                        </span>
+                                                    </td>
+                                                    <td>${new Date(exam.date).toLocaleDateString('ar-EG')}</td>
+                                                    <td>${exam.participants_count}</td>
+                                                    <td>${exam.average_grade}%</td>
+                                                </tr>
+                                            `).join('') || '<tr><td colspan="5" class="text-center text-muted">لا توجد امتحانات</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <h5 class="mt-4">الطلاب المسجلين</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>اسم الطالب</th>
+                                            <th>تاريخ التسجيل</th>
+                                            <th>التقدم</th>
+                                            <th>آخر درجة</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${this.allStudents
+                                            .filter(student => student.courses && student.courses.some(c => c.id === courseId))
+                                            .slice(0, 5)
+                                            .map(student => {
+                                                const studentCourse = student.courses.find(c => c.id === courseId);
+                                                return `
+                                                    <tr>
+                                                        <td>${student.name}</td>
+                                                        <td>${studentCourse ? new Date(studentCourse.enrollment_date).toLocaleDateString('ar-EG') : '--'}</td>
+                                                        <td>
+                                                            <div class="progress" style="height: 8px;">
+                                                                <div class="progress-bar" role="progressbar" 
+                                                                     style="width: ${studentCourse?.progress || 0}%" 
+                                                                     aria-valuenow="${studentCourse?.progress || 0}" 
+                                                                     aria-valuemin="0" aria-valuemax="100">
+                                                                </div>
+                                                            </div>
+                                                            <small>${studentCourse?.progress || 0}%</small>
+                                                        </td>
+                                                        <td>${studentCourse?.last_grade || '--'}%</td>
+                                                    </tr>
+                                                `;
+                                            }).join('') || '<tr><td colspan="4" class="text-center text-muted">لا توجد طلاب مسجلين</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                new bootstrap.Modal(document.getElementById('courseDetailsModal')).show();
+            }
+
+            showExamDetails(examId) {
+                const exam = this.allExams.find(e => e.id === examId);
+                if (!exam) return;
+
+                // في التطبيق الحقيقي، سيتم جلب تفاصيل الامتحان من API
+                this.showAlert(`تفاصيل الامتحان: ${exam.name}`, 'info');
+            }
+
+            editCourse(courseId) {
+                const course = this.allCourses.find(c => c.id === courseId);
+                if (!course) return;
+
+                const modalContent = document.getElementById('editCourseContent');
+                modalContent.innerHTML = `
+                    <form id="editCourseForm">
+                        <input type="hidden" name="id" value="${course.id}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">اسم الكورس</label>
+                                <input type="text" class="form-control" name="name" value="${course.name}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">السعر (جنيه)</label>
+                                <input type="number" class="form-control" name="price" value="${course.price}" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">الوصف</label>
+                            <textarea class="form-control" name="description" rows="3">${course.description}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">المميزات</label>
+                            <input type="text" class="form-control" name="features" value="${course.features ? course.features.join(', ') : ''}">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">حفظ التغييرات</button>
+                    </form>
+                `;
+
+                document.getElementById('editCourseForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await this.updateCourse(new FormData(e.target));
+                });
+
+                new bootstrap.Modal(document.getElementById('editCourseModal')).show();
+            }
+
+            async updateCourse(formData) {
+                const data = Object.fromEntries(formData);
+                
+                try {
+                    // محاكاة لطلب API
+                    const courseIndex = this.allCourses.findIndex(c => c.id === data.id);
+                    if (courseIndex !== -1) {
+                        this.allCourses[courseIndex] = {
+                            ...this.allCourses[courseIndex],
+                            ...data,
+                            features: data.features ? data.features.split(',').map(f => f.trim()) : []
+                        };
+                        
+                        this.showAlert('✅ تم تحديث بيانات الكورس بنجاح', 'success');
+                        bootstrap.Modal.getInstance(document.getElementById('editCourseModal')).hide();
+                        this.displayCourses();
+                    }
+                } catch (error) {
+                    console.error('Error updating course:', error);
+                    this.showAlert('❌ حدث خطأ أثناء تحديث الكورس', 'danger');
+                }
+            }
+
+            async addCourse(formData) {
+                try {
+                    // محاكاة لطلب API
+                    const newCourse = {
+                        id: Date.now().toString(),
+                        ...formData,
+                        students_count: 0,
+                        average_grade: 0,
+                        features: formData.features ? formData.features.split(',').map(f => f.trim()) : []
+                    };
+                    
+                    this.allCourses.push(newCourse);
+                    this.showAlert('✅ تم إضافة الكورس بنجاح', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('addCourseModal')).hide();
+                    document.getElementById('addCourseForm').reset();
+                    this.displayCourses();
+                    this.updateStats();
+                } catch (error) {
+                    console.error('Error adding course:', error);
+                    this.showAlert('❌ حدث خطأ أثناء إضافة الكورس', 'danger');
+                }
+            }
+
+            confirmDelete(type, id, name) {
+                this.currentDeleteAction = { type, id };
+                const message = type === 'course' 
+                    ? `هل أنت متأكد من حذف الكورس "${name}"؟ سيتم حذف جميع البيانات المرتبطة به.`
+                    : `هل أنت متأكد من حذف ${type === 'student' ? 'الطالب' : 'المستخدم'} "${name}"؟`;
+
+                document.getElementById('deleteMessage').textContent = message;
+                document.getElementById('confirmDeleteBtn').onclick = () => this.executeDelete();
+                
+                new bootstrap.Modal(document.getElementById('confirmDeleteModal')).show();
+            }
+
+            async executeDelete() {
+                const { type, id } = this.currentDeleteAction;
+                
+                try {
+                    // محاكاة لطلب API
+                    if (type === 'student') {
+                        this.allStudents = this.allStudents.filter(s => s.id !== id);
+                        this.updateStudentsTable(this.allStudents);
+                        this.populateStudentSelector();
+                    } else if (type === 'course') {
+                        this.allCourses = this.allCourses.filter(c => c.id !== id);
+                        this.displayCourses();
+                    } else if (type === 'user') {
+                        this.allUsers = this.allUsers.filter(u => u.id !== id);
+                        this.updateUsersTable(this.allUsers);
+                    }
+                    
+                    this.showAlert('✅ تم الحذف بنجاح', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).hide();
+                    this.updateStats();
+                } catch (error) {
+                    console.error('Error deleting:', error);
+                    this.showAlert('❌ حدث خطأ أثناء الحذف', 'danger');
+                }
+            }
+
+            async toggleStudentStatus(studentId, isActive) {
+                try {
+                    // محاكاة لطلب API
+                    const student = this.allStudents.find(s => s.id === studentId);
+                    if (student) {
+                        student.status = isActive ? 'inactive' : 'active';
+                        this.updateStudentsTable(this.allStudents);
+                        this.showAlert(`✅ تم ${isActive ? 'إيقاف' : 'تفعيل'} الطالب بنجاح`, 'success');
+                    }
+                } catch (error) {
+                    console.error('Error toggling student status:', error);
+                    this.showAlert('❌ حدث خطأ أثناء تغيير حالة الطالب', 'danger');
+                }
+            }
+
+            async toggleUserStatus(userId, isActive) {
+                try {
+                    // محاكاة لطلب API
+                    const user = this.allUsers.find(u => u.id === userId);
+                    if (user) {
+                        user.status = isActive ? 'inactive' : 'active';
+                        this.updateUsersTable(this.allUsers);
+                        this.showAlert(`✅ تم ${isActive ? 'إيقاف' : 'تفعيل'} المستخدم بنجاح`, 'success');
+                    }
+                } catch (error) {
+                    console.error('Error toggling user status:', error);
+                    this.showAlert('❌ حدث خطأ أثناء تغيير حالة المستخدم', 'danger');
+                }
+            }
+
+            async exportExamResults(examId) {
+                try {
+                    // محاكاة لطلب API
+                    this.showAlert('✅ تم تصدير نتائج الامتحان بنجاح', 'success');
+                } catch (error) {
+                    console.error('Error exporting exam results:', error);
+                    this.showAlert('❌ حدث خطأ أثناء تصدير النتائج', 'danger');
+                }
+            }
+
+            // فلترة البيانات
+            filterStudents() {
+                const statusFilter = document.getElementById('studentStatusFilter').value;
+                const levelFilter = document.getElementById('studentLevelFilter').value;
+                const searchTerm = document.getElementById('studentSearch').value.toLowerCase();
+
+                let filteredStudents = this.allStudents;
+
+                if (statusFilter) {
+                    filteredStudents = filteredStudents.filter(student => student.status === statusFilter);
+                }
+
+                if (levelFilter) {
+                    filteredStudents = filteredStudents.filter(student => student.level === levelFilter);
+                }
+
+                if (searchTerm) {
+                    filteredStudents = filteredStudents.filter(student => 
+                        student.name.toLowerCase().includes(searchTerm) || 
+                        student.email.toLowerCase().includes(searchTerm)
+                    );
+                }
+
+                this.updateStudentsTable(filteredStudents);
+            }
+
+            filterCourses() {
+                const searchTerm = document.getElementById('searchCourses').value.toLowerCase();
+                const categoryFilter = document.getElementById('filterCategory').value;
+                const levelFilter = document.getElementById('filterLevel').value;
+
+                let filteredCourses = this.allCourses;
+
+                if (searchTerm) {
+                    filteredCourses = filteredCourses.filter(course => 
+                        course.name.toLowerCase().includes(searchTerm) || 
+                        course.description.toLowerCase().includes(searchTerm)
+                    );
+                }
+
+                if (categoryFilter) {
+                    filteredCourses = filteredCourses.filter(course => course.category === categoryFilter);
+                }
+
+                if (levelFilter) {
+                    filteredCourses = filteredCourses.filter(course => course.level === levelFilter);
+                }
+
+                this.displayFilteredCourses(filteredCourses);
+            }
+
+            displayFilteredCourses(courses) {
+                const container = document.getElementById('coursesContainer');
+                
+                if (courses.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12">
+                            <div class="empty-state">
+                                <i class="bi bi-search"></i>
+                                <h5>لا توجد نتائج مطابقة</h5>
+                                <p>جرب تعديل معايير البحث</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = courses.map(course => `
+                    <div class="col-lg-6 col-xl-4 mb-4 fade-in">
+                        <div class="course-card card-hover">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="mb-0">${course.name}</h5>
+                                <span class="badge ${this.getLevelBadgeClass(course.level)}">${this.getLevelText(course.level)}</span>
+                            </div>
+                            <p class="text-muted mb-2">${course.description}</p>
+                            <div class="course-stats">
+                                <div class="course-stat">
+                                    <div class="course-stat-number">${course.students_count}</div>
+                                    <div class="course-stat-label">الطلاب</div>
+                                </div>
+                                <div class="course-stat">
+                                    <div class="course-stat-number">${course.duration}</div>
+                                    <div class="course-stat-label">أسبوع</div>
+                                </div>
+                                <div class="course-stat">
+                                    <div class="course-stat-number">${course.price}</div>
+                                    <div class="course-stat-label">ج.م</div>
+                                </div>
+                            </div>
+                            <div class="quick-actions">
+                                <button class="btn btn-outline-primary quick-action-btn" onclick="educationSystem.showCourseDetails('${course.id}')">
+                                    تفاصيل
+                                </button>
+                                <button class="btn btn-outline-info quick-action-btn" onclick="educationSystem.editCourse('${course.id}')">
+                                    <i class="bi bi-pencil me-1"></i>تعديل
+                                </button>
+                                <button class="btn btn-outline-danger quick-action-btn" onclick="educationSystem.confirmDelete('course', '${course.id}', '${course.name}')">
+                                    <i class="bi bi-trash me-1"></i>حذف
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            filterExams() {
+                const typeFilter = document.getElementById('examTypeFilter').value;
+                const courseFilter = document.getElementById('examCourseFilter').value;
+                const dateFrom = document.getElementById('examDateFrom').value;
+                const dateTo = document.getElementById('examDateTo').value;
+
+                let filteredExams = this.allExams;
+
+                if (typeFilter) {
+                    filteredExams = filteredExams.filter(exam => exam.type === typeFilter);
+                }
+
+                if (courseFilter) {
+                    filteredExams = filteredExams.filter(exam => exam.course_id === courseFilter);
+                }
+
+                if (dateFrom) {
+                    filteredExams = filteredExams.filter(exam => exam.date >= dateFrom);
+                }
+
+                if (dateTo) {
+                    filteredExams = filteredExams.filter(exam => exam.date <= dateTo);
+                }
+
+                this.updateExamsTable(filteredExams);
+            }
+
+            filterRevenue() {
+                const periodFilter = document.getElementById('revenuePeriodFilter').value;
+                const courseFilter = document.getElementById('revenueCourseFilter').value;
+                const monthFilter = document.getElementById('revenueMonth').value;
+
+                // في التطبيق الحقيقي، سيتم جلب البيانات المفلترة من API
+                this.showAlert('تم تطبيق عوامل التصفية على بيانات الإيرادات', 'info');
+            }
+
+            filterUsers() {
+                const roleFilter = document.getElementById('userRoleFilter').value;
+                const statusFilter = document.getElementById('userStatusFilter').value;
+
+                let filteredUsers = this.allUsers;
+
+                if (roleFilter) {
+                    filteredUsers = filteredUsers.filter(user => user.role === roleFilter);
+                }
+
+                if (statusFilter) {
+                    filteredUsers = filteredUsers.filter(user => user.status === statusFilter);
+                }
+
+                this.updateUsersTable(filteredUsers);
+            }
+
+            filterActivityLogs() {
+                const userFilter = document.getElementById('activityUserFilter').value;
+                const actionFilter = document.getElementById('activityActionFilter').value;
+                const dateFrom = document.getElementById('activityDateFrom').value;
+                const dateTo = document.getElementById('activityDateTo').value;
+
+                let filteredLogs = this.activityLogs;
+
+                if (userFilter) {
+                    filteredLogs = filteredLogs.filter(log => log.user_id == userFilter);
+                }
+
+                if (actionFilter) {
+                    filteredLogs = filteredLogs.filter(log => log.action === actionFilter);
+                }
+
+                if (dateFrom) {
+                    filteredLogs = filteredLogs.filter(log => new Date(log.created_at) >= new Date(dateFrom));
+                }
+
+                if (dateTo) {
+                    filteredLogs = filteredLogs.filter(log => new Date(log.created_at) <= new Date(dateTo));
+                }
+
+                this.updateActivityLogsTable(filteredLogs);
+            }
+
+            // إعداد معالجات الأحداث
+            setupEventListeners() {
+                // فلترة الطلاب
+                document.getElementById('studentSearch').addEventListener('input', () => this.filterStudents());
+                document.getElementById('studentStatusFilter').addEventListener('change', () => this.filterStudents());
+                document.getElementById('studentLevelFilter').addEventListener('change', () => this.filterStudents());
+                
+                // فلترة الكورسات
+                document.getElementById('searchCourses').addEventListener('input', () => this.filterCourses());
+                document.getElementById('filterCategory').addEventListener('change', () => this.filterCourses());
+                document.getElementById('filterLevel').addEventListener('change', () => this.filterCourses());
+
+                // نموذج إضافة كورس
+                document.getElementById('addCourseForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    const data = Object.fromEntries(formData);
+                    await this.addCourse(data);
+                });
+
+                // نموذج الإشعارات
+                document.getElementById('notificationForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await this.sendNotification();
+                });
+
+                // إضافة تأثيرات للعناصر عند التمرير
+                this.setupScrollAnimations();
+
+                console.log('✅ تم إعداد معالجات الأحداث');
+            }
+
+            // إعداد تأثيرات التمرير
+            setupScrollAnimations() {
+                const observerOptions = {
+                    threshold: 0.1,
+                    rootMargin: '0px 0px -50px 0px'
+                };
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('fade-in');
+                        }
+                    });
+                }, observerOptions);
+
+                // مراقبة العناصر لإضافة تأثيرات
+                document.querySelectorAll('.stat-card, .course-card, .table-responsive').forEach(el => {
+                    observer.observe(el);
+                });
+            }
+
+            startAutoRefresh() {
+                // تحديث تلقائي كل 5 دقائق
+                setInterval(() => {
+                    if (document.visibilityState === 'visible') {
+                        this.loadInitialData();
+                    }
+                }, 300000);
+
+                // تحديث عند العودة إلى الصفحة
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') {
+                        this.loadInitialData();
+                    }
+                });
+
+                console.log('✅ تم تفعيل التحديث التلقائي');
+            }
+
+            // إرسال إشعار
+            async sendNotification() {
+                const title = document.getElementById('notificationTitle').value;
+                const message = document.getElementById('notificationMessage').value;
+                const type = document.getElementById('notificationType').value;
+                const userId = document.getElementById('notificationUser').value;
+                const actionUrl = document.getElementById('notificationActionUrl').value;
+
+                try {
+                    // محاكاة لطلب API
+                    const newNotification = {
+                        id: Date.now().toString(),
+                        title,
+                        message,
+                        type,
+                        user_id: userId === 'all' ? null : userId,
+                        action_url: actionUrl || null,
+                        created_at: new Date().toISOString()
+                    };
+                    
+                    this.notifications.unshift(newNotification);
+                    this.updateNotificationsHistory();
+                    
+                    this.showAlert('✅ تم إرسال الإشعار بنجاح', 'success');
+                    document.getElementById('notificationForm').reset();
+                } catch (error) {
+                    console.error('Error sending notification:', error);
+                    this.showAlert('❌ حدث خطأ أثناء إرسال الإشعار', 'danger');
+                }
+            }
+
+            // إنشاء تقرير
+            async generateReport() {
+                try {
+                    // محاكاة لطلب API
+                    this.showAlert('✅ تم إنشاء التقرير بنجاح', 'success');
+                } catch (error) {
+                    console.error('Error generating report:', error);
+                    this.showAlert('❌ حدث خطأ أثناء إنشاء التقرير', 'danger');
+                }
+            }
+
+            // بيانات تجريبية
+            getMockStudents() {
+                return [
+                    {
+                        id: '1',
+                        name: 'أحمد محمد',
+                        email: 'ahmed@example.com',
+                        image: '/api/placeholder/150/150',
+                        level: 'beginner',
+                        status: 'active',
+                        registration_date: '2024-01-15',
+                        courses_count: 2,
+                        completed_courses: 0,
+                        average_grade: 75,
+                        last_exam_grade: 80,
+                        current_course: 'برمجة ويب للمبتدئين',
+                        courses: [
+                            {
+                                id: '1',
+                                name: 'برمجة ويب للمبتدئين',
+                                enrollment_date: '2024-01-20',
+                                progress: 60,
+                                last_grade: 80
+                            },
+                            {
+                                id: '2',
+                                name: 'تصميم UX/UI',
+                                enrollment_date: '2024-02-01',
+                                progress: 30,
+                                last_grade: 70
+                            }
+                        ]
+                    },
+                    {
+                        id: '2',
+                        name: 'سارة أحمد',
+                        email: 'sara@example.com',
+                        image: '/api/placeholder/150/150',
+                        level: 'intermediate',
+                        status: 'active',
+                        registration_date: '2024-01-10',
+                        courses_count: 3,
+                        completed_courses: 1,
+                        average_grade: 85,
+                        last_exam_grade: 90,
+                        current_course: 'تطوير تطبيقات Android',
+                        courses: [
+                            {
+                                id: '3',
+                                name: 'تطوير تطبيقات Android',
+                                enrollment_date: '2024-01-25',
+                                progress: 80,
+                                last_grade: 90
+                            },
+                            {
+                                id: '4',
+                                name: 'تسويق رقمي متقدم',
+                                enrollment_date: '2024-02-05',
+                                progress: 50,
+                                last_grade: 85
+                            }
+                        ]
+                    },
+                    {
+                        id: '3',
+                        name: 'محمود علي',
+                        email: 'mahmoud@example.com',
+                        image: '/api/placeholder/150/150',
+                        level: 'advanced',
+                        status: 'inactive',
+                        registration_date: '2024-01-05',
+                        courses_count: 4,
+                        completed_courses: 2,
+                        average_grade: 92,
+                        last_exam_grade: 95,
+                        current_course: 'تعلم الآلة',
+                        courses: [
+                            {
+                                id: '5',
+                                name: 'تعلم الآلة',
+                                enrollment_date: '2024-01-30',
+                                progress: 40,
+                                last_grade: 95
+                            }
+                        ]
+                    }
+                ];
+            }
+
+            getMockCourses() {
+                return [
+                    {
+                        id: '1',
+                        name: 'برمجة ويب للمبتدئين',
+                        category: 'programming',
+                        level: 'beginner',
+                        price: 500,
+                        duration: 8,
+                        description: 'تعلم أساسيات برمجة الويب باستخدام HTML, CSS, JavaScript',
+                        image: '/api/placeholder/300/200',
+                        students_count: 25,
+                        average_grade: 78,
+                        features: ['فيديوهات تعليمية', 'تمارين تفاعلية', 'مشروع نهائي', 'شهادة معتمدة']
+                    },
+                    {
+                        id: '2',
+                        name: 'تصميم UX/UI',
+                        category: 'design',
+                        level: 'intermediate',
+                        price: 700,
+                        duration: 10,
+                        description: 'تعلم تصميم تجربة المستخدم وواجهات المستخدم الاحترافية',
+                        image: '/api/placeholder/300/200',
+                        students_count: 18,
+                        average_grade: 82,
+                        features: ['أدوات تصميم حديثة', 'دراسات حالة', 'مشاريع عملية', 'مراجعة محفظة']
+                    },
+                    {
+                        id: '3',
+                        name: 'تطوير تطبيقات Android',
+                        category: 'programming',
+                        level: 'intermediate',
+                        price: 800,
+                        duration: 12,
+                        description: 'تعلم تطوير تطبيقات Android باستخدام Kotlin و Android Studio',
+                        image: '/api/placeholder/300/200',
+                        students_count: 15,
+                        average_grade: 85,
+                        features: ['مشاريع حقيقية', 'كود مراجعة', 'نشر على متجر Play', 'دعم فني']
+                    },
+                    {
+                        id: '4',
+                        name: 'تسويق رقمي متقدم',
+                        category: 'marketing',
+                        level: 'advanced',
+                        price: 900,
+                        duration: 6,
+                        description: 'تعلم استراتيجيات التسويق الرقمي المتقدمة وتحليل البيانات',
+                        image: '/api/placeholder/300/200',
+                        students_count: 12,
+                        average_grade: 88,
+                        features: ['تحليل بيانات', 'حملات إعلانية', 'تحسين محركات البحث', 'شهادة معتمدة']
+                    },
+                    {
+                        id: '5',
+                        name: 'تعلم الآلة',
+                        category: 'programming',
+                        level: 'advanced',
+                        price: 1200,
+                        duration: 16,
+                        description: 'تعلم أساسيات تعلم الآلة والخوارزميات المتقدمة',
+                        image: '/api/placeholder/300/200',
+                        students_count: 8,
+                        average_grade: 90,
+                        features: ['مشاريع بحثية', 'بيانات حقيقية', 'نماذج متقدمة', 'مراجعة الأقران']
+                    }
+                ];
+            }
+
+            getMockExams() {
+                return [
+                    {
+                        id: '1',
+                        name: 'امتحان منتصف المدة - برمجة ويب',
+                        course_id: '1',
+                        course_name: 'برمجة ويب للمبتدئين',
+                        type: 'exam',
+                        date: '2024-02-15',
+                        participants_count: 20,
+                        average_grade: 75
+                    },
+                    {
+                        id: '2',
+                        name: 'الواجب الأول - تصميم UX/UI',
+                        course_id: '2',
+                        course_name: 'تصميم UX/UI',
+                        type: 'assignment',
+                        date: '2024-02-10',
+                        participants_count: 15,
+                        average_grade: 80
+                    },
+                    {
+                        id: '3',
+                        name: 'اختبار قصير - Android',
+                        course_id: '3',
+                        course_name: 'تطوير تطبيقات Android',
+                        type: 'quiz',
+                        date: '2024-02-12',
+                        participants_count: 12,
+                        average_grade: 85
+                    },
+                    {
+                        id: '4',
+                        name: 'امتحان نهائي - تسويق رقمي',
+                        course_id: '4',
+                        course_name: 'تسويق رقمي متقدم',
+                        type: 'exam',
+                        date: '2024-02-20',
+                        participants_count: 10,
+                        average_grade: 88
+                    }
+                ];
+            }
+
+            getMockUsers() {
+                return [
+                    {
+                        id: '1',
+                        name: 'مسؤول النظام',
+                        email: 'admin@example.com',
+                        role: 'admin',
+                        status: 'active',
+                        registration_date: '2024-01-01'
+                    },
+                    {
+                        id: '2',
+                        name: 'أحمد المدرب',
+                        email: 'instructor1@example.com',
+                        role: 'instructor',
+                        status: 'active',
+                        registration_date: '2024-01-05'
+                    },
+                    {
+                        id: '3',
+                        name: 'سارة المدربة',
+                        email: 'instructor2@example.com',
+                        role: 'instructor',
+                        status: 'active',
+                        registration_date: '2024-01-08'
+                    },
+                    {
+                        id: '4',
+                        name: 'محمود الطالب',
+                        email: 'student1@example.com',
+                        role: 'student',
+                        status: 'active',
+                        registration_date: '2024-01-15'
+                    }
+                ];
+            }
+
+            getMockRevenueData() {
+                return {
+                    total: 125000,
+                    monthly: {
+                        revenues: [12000, 15000, 18000, 20000, 17000, 22000]
+                    },
+                    by_course: {
+                        labels: ['برمجة ويب', 'تصميم UX/UI', 'تطوير Android', 'تسويق رقمي', 'تعلم الآلة'],
+                        values: [45000, 25000, 20000, 20000, 15000]
+                    },
+                    details: [
+                        {
+                            course_name: 'برمجة ويب للمبتدئين',
+                            students_count: 25,
+                            revenue: 12500,
+                            cost: 5000,
+                            profit: 7500,
+                            profit_rate: 150
+                        },
+                        {
+                            course_name: 'تصميم UX/UI',
+                            students_count: 18,
+                            revenue: 12600,
+                            cost: 6000,
+                            profit: 6600,
+                            profit_rate: 110
+                        },
+                        {
+                            course_name: 'تطوير تطبيقات Android',
+                            students_count: 15,
+                            revenue: 12000,
+                            cost: 7000,
+                            profit: 5000,
+                            profit_rate: 71.43
+                        },
+                        {
+                            course_name: 'تسويق رقمي متقدم',
+                            students_count: 12,
+                            revenue: 10800,
+                            cost: 5000,
+                            profit: 5800,
+                            profit_rate: 116
+                        },
+                        {
+                            course_name: 'تعلم الآلة',
+                            students_count: 8,
+                            revenue: 9600,
+                            cost: 8000,
+                            profit: 1600,
+                            profit_rate: 20
+                        }
+                    ]
+                };
+            }
+
+            getMockSystemMetrics() {
+                return {
+                    total_students: 45,
+                    total_courses: 5,
+                    total_exams: 12,
+                    total_revenue: 125000,
+                    active_students: 35,
+                    completion_rate: '65%',
+                    avg_grade: 82,
+                    popular_course: 'برمجة ويب للمبتدئين',
+                    monthly_data: {
+                        new_students: [8, 10, 12, 15, 18, 20]
+                    },
+                    students_by_level: {
+                        beginner: 20,
+                        intermediate: 15,
+                        advanced: 10
+                    }
+                };
+            }
+
+            getMockNotifications() {
+                return [
+                    {
+                        id: '1',
+                        title: 'ترقية النظام',
+                        message: 'تم ترقية النظام إلى الإصدار 2.0',
+                        type: 'info',
+                        user_id: 'all',
+                        created_at: '2024-02-15T10:00:00Z'
+                    },
+                    {
+                        id: '2',
+                        name: 'امتحان جديد',
+                        message: 'تم إضافة امتحان جديد للكورس برمجة ويب',
+                        type: 'success',
+                        user_id: '1',
+                        user: { name: 'مسؤول النظام' },
+                        created_at: '2024-02-15T11:30:00Z'
+                    },
+                    {
+                        id: '3',
+                        title: 'صيانة مجدولة',
+                        message: 'سيتم إغلاق النظام للصيانة يوم الجمعة القادم',
+                        type: 'warning',
+                        user_id: 'all',
+                        created_at: '2024-02-16T09:00:00Z'
+                    }
+                ];
+            }
+
+            getMockActivityLogs() {
+                return [
+                    {
+                        id: '1',
+                        user_id: '1',
+                        user: { name: 'مسؤول النظام' },
+                        action: 'login',
+                        description: 'قام المستخدم مسؤول النظام بتسجيل الدخول',
+                        ip_address: '192.168.1.100',
+                        created_at: '2024-02-15T09:00:00Z'
+                    },
+                    {
+                        id: '2',
+                        user_id: '1',
+                        user: { name: 'مسؤول النظام' },
+                        action: 'create',
+                        description: 'تم إنشاء كورس جديد: برمجة ويب للمبتدئين',
+                        ip_address: '192.168.1.100',
+                        created_at: '2024-02-15T10:30:00Z'
+                    },
+                    {
+                        id: '3',
+                        user_id: '2',
+                        user: { name: 'أحمد المدرب' },
+                        action: 'update',
+                        description: 'تم تحديث محتوى الكورس: تصميم UX/UI',
+                        ip_address: '192.168.1.101',
+                        created_at: '2024-02-15T11:15:00Z'
+                    },
+                    {
+                        id: '4',
+                        user_id: '1',
+                        user: { name: 'مسؤول النظام' },
+                        action: 'delete',
+                        description: 'تم حذف طالب غير نشط',
+                        ip_address: '192.168.1.100',
+                        created_at: '2024-02-15T14:20:00Z'
+                    }
+                ];
+            }
+        }
+
+        // تهيئة النظام
+        const educationSystem = new EducationManagementSystem();
+
+        // دوال عامة
+        function logout() {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                localStorage.clear();
+                window.location.href = '/login.html';
+            }
+        }
+
+        function refreshAll() {
+            educationSystem.loadInitialData();
+            educationSystem.showAlert('تم تحديث البيانات', 'info');
+        }
+
+        function exportData() {
+            const data = {
+                students: educationSystem.allStudents,
+                courses: educationSystem.allCourses,
+                exams: educationSystem.allExams,
+                users: educationSystem.allUsers,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `export-data-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            educationSystem.showAlert('تم تصدير البيانات بنجاح', 'success');
+        }
+
+        function showAddCourseModal() {
+            new bootstrap.Modal(document.getElementById('addCourseModal')).show();
+        }
+
+        function addCourse() {
+            document.getElementById('addCourseForm').dispatchEvent(new Event('submit'));
+        }
+
+        function handleStudentChange(studentId) {
+            selectedStudentId = studentId;
+            educationSystem.updateSelectedStudentInfo();
+            
+            if (studentId === 'all') {
+                educationSystem.loadStudents();
+            } else {
+                // في التطبيق الحقيقي، سيتم جلب بيانات الطالب المحدد فقط
+                educationSystem.showAlert(`تم التبديل إلى عرض بيانات الطالب المحدد`, 'info');
+            }
+        }
+
+        function filterStudents() {
+            educationSystem.filterStudents();
+        }
+
+        function filterCourses() {
+            educationSystem.filterCourses();
+        }
+
+        function filterExams() {
+            educationSystem.filterExams();
+        }
+
+        function filterRevenue() {
+            educationSystem.filterRevenue();
+        }
+
+        function filterUsers() {
+            educationSystem.filterUsers();
+        }
+
+        function filterActivityLogs() {
+            educationSystem.filterActivityLogs();
+        }
+
+        function generateReport() {
+            educationSystem.generateReport();
+        }
+
+        function exportToPDF() {
+            educationSystem.showAlert('تم تصدير التقرير إلى PDF', 'success');
+        }
+
+        function exportToExcel() {
+            educationSystem.showAlert('تم تصدير التقرير إلى Excel', 'success');
+        }
+
+        function showHelp() {
+            new bootstrap.Modal(document.getElementById('helpModal')).show();
+        }
+
+        function showSystemInfo() {
+            const info = `
+                <strong>معلومات النظام:</strong><br>
+                - الإصدار: 1.0.0<br>
+                - آخر تحديث: ${new Date().toLocaleDateString('ar-EG')}<br>
+                - عدد الطلاب: ${educationSystem.allStudents.length}<br>
+                - عدد الكورسات: ${educationSystem.allCourses.length}<br>
+                - عدد الامتحانات: ${educationSystem.allExams.length}
+            `;
+            educationSystem.showAlert(info, 'info');
+        }
+
+        // دوال التصدير
+        function exportStudents() {
+            const data = educationSystem.allStudents;
+            const csv = convertToCSV(data);
+            downloadCSV(csv, 'students.csv');
+            educationSystem.showAlert('تم تصدير الطلاب بنجاح', 'success');
+        }
+
+        function exportExams() {
+            const data = educationSystem.allExams;
+            const csv = convertToCSV(data);
+            downloadCSV(csv, 'exams.csv');
+            educationSystem.showAlert('تم تصدير الامتحانات بنجاح', 'success');
+        }
+
+        function exportUsers() {
+            const data = educationSystem.allUsers;
+            const csv = convertToCSV(data);
+            downloadCSV(csv, 'users.csv');
+            educationSystem.showAlert('تم تصدير المستخدمين بنجاح', 'success');
+        }
+
+        function exportRevenue() {
+            const data = educationSystem.revenueData.details || [];
+            const csv = convertToCSV(data);
+            downloadCSV(csv, 'revenue.csv');
+            educationSystem.showAlert('تم تصدير الإيرادات بنجاح', 'success');
+        }
+
+        function exportActivityLogs() {
+            const data = educationSystem.activityLogs;
+            const csv = convertToCSV(data);
+            downloadCSV(csv, 'activity-logs.csv');
+            educationSystem.showAlert('تم تصدير سجل الأنشطة بنجاح', 'success');
+        }
+
+        function convertToCSV(data) {
+            if (data.length === 0) return '';
+            
+            const headers = Object.keys(data[0]);
+            const csvRows = [headers.join(',')];
+            
+            for (const row of data) {
+                const values = headers.map(header => {
+                    const value = row[header];
+                    return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+                });
+                csvRows.push(values.join(','));
+            }
+            
+            return csvRows.join('\n');
+        }
+
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 بدء تحميل الصفحة...');
+            
+            // إعداد تاريخ اليوم
+            const today = new Date().toISOString().split('T')[0];
+            const dateInputs = document.querySelectorAll('input[type="date"]');
+            dateInputs.forEach(input => {
+                if (!input.value) {
+                    input.value = today;
+                }
+            });
+
+            // إعداد شهر الحالي
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            document.getElementById('revenueMonth').value = currentMonth;
+
+            console.log('✅ تم تحميل الصفحة بنجاح');
+        });
+    </script>
+</body>
+</html>
