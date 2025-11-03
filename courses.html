@@ -18,6 +18,9 @@
             --border-light: #E0E0E0;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             --transition: all 0.3s ease;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
         }
         
         * {
@@ -182,6 +185,7 @@
             transition: var(--transition);
             margin-bottom: 1.5rem;
             height: 100%;
+            position: relative;
         }
         
         .course-card:hover {
@@ -207,6 +211,14 @@
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
+        }
+        
+        .course-badge.expired {
+            background-color: var(--danger);
+        }
+        
+        .course-badge.owned {
+            background-color: var(--success);
         }
         
         .course-content {
@@ -271,6 +283,18 @@
             margin-bottom: 1rem;
         }
         
+        .course-expiry {
+            font-size: 0.85rem;
+            color: var(--danger);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .course-expiry i {
+            margin-left: 0.5rem;
+        }
+        
         .btn-enroll {
             background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
             color: white;
@@ -289,6 +313,21 @@
         
         .btn-enroll.free {
             background: linear-gradient(135deg, #4CAF50, #2E7D32);
+        }
+        
+        .btn-enroll.owned {
+            background: linear-gradient(135deg, var(--success), #1e7e34);
+        }
+        
+        .btn-enroll.expired {
+            background: linear-gradient(135deg, var(--danger), #c82333);
+            cursor: not-allowed;
+        }
+        
+        .btn-enroll:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
         
         /* Loading Animation */
@@ -505,6 +544,18 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // بيانات المستخدم الحالي
+        const currentUser = {
+            id: 1,
+            name: "أحمد محمد",
+            balance: 250,
+            purchasedCourses: [
+                { courseId: 1, expiryDate: "2024-12-31" },
+                { courseId: 4, expiryDate: "2023-10-15" }, // منتهي الصلاحية
+                { courseId: 5, expiryDate: "2024-08-20" }
+            ]
+        };
+
         // بيانات تجريبية للكورسات
         const sampleCourses = [
             {
@@ -639,6 +690,24 @@
             }
         }
 
+        // دالة للتحقق من حالة الكورس بالنسبة للمستخدم
+        function getCourseStatus(courseId) {
+            const purchasedCourse = currentUser.purchasedCourses.find(pc => pc.courseId === courseId);
+            
+            if (!purchasedCourse) {
+                return { status: 'not_purchased' };
+            }
+            
+            const expiryDate = new Date(purchasedCourse.expiryDate);
+            const today = new Date();
+            
+            if (expiryDate < today) {
+                return { status: 'expired', expiryDate: purchasedCourse.expiryDate };
+            }
+            
+            return { status: 'owned', expiryDate: purchasedCourse.expiryDate };
+        }
+
         function renderAllCourses(courses) {
             const container = document.getElementById('allCoursesContainer');
             
@@ -655,43 +724,82 @@
                 return;
             }
             
-            container.innerHTML = courses.map(course => `
-                <div class="col-lg-4 col-md-6">
-                    <div class="course-card">
-                        <div class="course-image" style="background-image: url('${course.image}')">
-                            ${course.isNew ? '<span class="course-badge">جديد</span>' : ''}
-                        </div>
-                        <div class="course-content">
-                            <div class="course-category">${getCategoryName(course.category)}</div>
-                            <h3 class="course-title">${course.title}</h3>
-                            <div class="course-instructor">
-                                <div class="instructor-avatar"></div>
-                                <span class="instructor-name">${course.instructor}</span>
+            container.innerHTML = courses.map(course => {
+                const courseStatus = getCourseStatus(course.id);
+                let buttonText = '';
+                let buttonClass = '';
+                let badgeText = '';
+                let badgeClass = '';
+                let expiryInfo = '';
+                
+                switch(courseStatus.status) {
+                    case 'owned':
+                        buttonText = 'ابدأ التعلم';
+                        buttonClass = 'owned';
+                        badgeText = 'مشترى';
+                        badgeClass = 'owned';
+                        expiryInfo = `<div class="course-expiry"><i class="fas fa-calendar-check"></i> صالح حتى ${formatDate(courseStatus.expiryDate)}</div>`;
+                        break;
+                    case 'expired':
+                        buttonText = 'منتهي الصلاحية';
+                        buttonClass = 'expired';
+                        badgeText = 'منتهي';
+                        badgeClass = 'expired';
+                        expiryInfo = `<div class="course-expiry"><i class="fas fa-exclamation-triangle"></i> انتهت الصلاحية في ${formatDate(courseStatus.expiryDate)}</div>`;
+                        break;
+                    default:
+                        buttonText = course.price === 0 ? 'ابدأ التعلم' : `اشترك الآن - ${course.price} ج.م`;
+                        buttonClass = course.price === 0 ? 'free' : '';
+                        badgeText = course.isNew ? 'جديد' : '';
+                        badgeClass = '';
+                        break;
+                }
+                
+                return `
+                    <div class="col-lg-4 col-md-6">
+                        <div class="course-card">
+                            <div class="course-image" style="background-image: url('${course.image}')">
+                                ${badgeText ? `<span class="course-badge ${badgeClass}">${badgeText}</span>` : ''}
                             </div>
-                            <div class="course-meta">
-                                <div>
-                                    <i class="fas fa-star text-warning"></i>
-                                    <span>${course.rating}</span>
+                            <div class="course-content">
+                                <div class="course-category">${getCategoryName(course.category)}</div>
+                                <h3 class="course-title">${course.title}</h3>
+                                <div class="course-instructor">
+                                    <div class="instructor-avatar"></div>
+                                    <span class="instructor-name">${course.instructor}</span>
                                 </div>
-                                <div>
-                                    <i class="fas fa-users"></i>
-                                    <span>${course.students.toLocaleString()}</span>
+                                <div class="course-meta">
+                                    <div>
+                                        <i class="fas fa-star text-warning"></i>
+                                        <span>${course.rating}</span>
+                                    </div>
+                                    <div>
+                                        <i class="fas fa-users"></i>
+                                        <span>${course.students.toLocaleString()}</span>
+                                    </div>
+                                    <div>
+                                        <i class="far fa-clock"></i>
+                                        <span>${course.duration}</span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <i class="far fa-clock"></i>
-                                    <span>${course.duration}</span>
-                                </div>
+                                ${courseStatus.status === 'not_purchased' && course.price > 0 ? 
+                                    `<div class="course-price">${course.price} ج.م</div>` : ''}
+                                ${expiryInfo}
+                                <button class="btn-enroll ${buttonClass}" 
+                                    ${courseStatus.status === 'expired' ? 'disabled' : ''}
+                                    onclick="handleCourseAction(${course.id}, '${courseStatus.status}')">
+                                    ${buttonText}
+                                </button>
                             </div>
-                            <div class="course-price">
-                                ${course.price === 0 ? 'مجاني' : `${course.price} ج.م`}
-                            </div>
-                            <button class="btn-enroll ${course.price === 0 ? 'free' : ''}">
-                                ${course.price === 0 ? 'ابدأ التعلم' : 'اشترك الآن'}
-                            </button>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ar-EG');
         }
 
         function getCategoryName(category) {
@@ -708,8 +816,40 @@
             renderAllCourses(sampleCourses);
         }
 
+        // دالة للتعامل مع الضغط على زر الكورس
+        function handleCourseAction(courseId, status) {
+            switch(status) {
+                case 'not_purchased':
+                    // تحقق إذا كان الكورس مجاني
+                    const course = sampleCourses.find(c => c.id === courseId);
+                    if (course.price === 0) {
+                        // اشتراك مجاني
+                        alert(`تم اشتراكك في كورس "${course.title}" بنجاح!`);
+                        // هنا يمكن إضافة منطق إضافي لتحديث حالة المستخدم
+                    } else {
+                        // شراء الكورس
+                        alert(`سيتم تحويلك لصفحة الدفع لشراء كورس "${course.title}"`);
+                        // هنا يمكن إضافة منطق إضافي للدفع
+                    }
+                    break;
+                case 'owned':
+                    // الانتقال للكورس
+                    alert(`سيتم تحويلك لصفحة الكورس "${sampleCourses.find(c => c.id === courseId).title}"`);
+                    // هنا يمكن إضافة منطق إضافي للانتقال للكورس
+                    break;
+                case 'expired':
+                    // لا يمكن فعل شيء
+                    alert('هذا الكورس منتهي الصلاحية، يرجى تجديد الاشتراك');
+                    break;
+            }
+        }
+
         // إعداد الفلاتر
         document.addEventListener('DOMContentLoaded', function() {
+            // تحديث بيانات المستخدم في الواجهة
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userBalance').textContent = `${currentUser.balance} ج.م`;
+            
             loadAllCourses();
             
             const filters = {};
