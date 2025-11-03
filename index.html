@@ -1,1 +1,713 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة التعليم الإلكتروني - احجزلي</title>
+  
+  <!-- Meta Tags for SEO & Security -->
+  <meta name="description" content="منصة تعليمية احترافية تقدم أفضل الكورسات والدروس في مختلف المجالات - طور مهاراتك مع احجزلي">
+  <meta name="theme-color" content="#1a7f46">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com https://placehold.co; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com 'unsafe-inline';">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="icon" href="./images/favicon.png">
+  
+  <!-- Bootstrap + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-color: #1a7f46;
+      --secondary-color: #2ecc71;
+      --accent-color: #f39c12;
+      --dark-color: #2c3e50;
+      --light-color: #ecf0f1;
+      --blue-color: #3498db;
+      --gold-color: #ffd700;
+    }
+    
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+      overflow-x: hidden;
+    }
 
+    /* Navigation */
+    .navbar {
+      background: rgba(255, 255, 255, 0.95) !important;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+    
+    .navbar.scrolled {
+      background: rgba(255, 255, 255, 0.98) !important;
+      padding: 0.5rem 0;
+    }
+    
+    .navbar-brand {
+      font-weight: 700;
+      color: var(--primary-color) !important;
+      font-size: 1.5rem;
+    }
+    
+    .nav-link {
+      font-weight: 500;
+      margin: 0 0.5rem;
+      color: var(--dark-color) !important;
+      transition: color 0.3s ease;
+    }
+    
+    .nav-link:hover, .nav-link.active {
+      color: var(--primary-color) !important;
+    }
+
+    /* Hero Section */
+    .hero-section {
+      background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                  url('./images/education-bg.jpg') center/cover no-repeat;
+      min-height: 80vh;
+      display: flex;
+      align-items: center;
+      color: white;
+      position: relative;
+      margin-top: 76px;
+    }
+    
+    .hero-content {
+      text-align: center;
+    }
+    
+    .hero-title {
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+    }
+    
+    .hero-subtitle {
+      font-size: 1.3rem;
+      margin-bottom: 2rem;
+      opacity: 0.9;
+      line-height: 1.6;
+    }
+    
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Course Cards */
+    .course-card {
+      border: none;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+    
+    .course-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+    
+    .course-image {
+      height: 200px;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+    
+    .course-badge {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: var(--primary-color);
+      color: white;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    
+    .course-price {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 25px;
+      font-weight: 600;
+    }
+    
+    .course-info {
+      padding: 1.5rem;
+    }
+    
+    .course-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--dark-color);
+      margin-bottom: 0.5rem;
+    }
+    
+    .course-instructor {
+      color: #666;
+      margin-bottom: 1rem;
+    }
+    
+    .course-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.8rem;
+      color: #666;
+      background: #f8f9fa;
+      padding: 0.3rem 0.6rem;
+      border-radius: 12px;
+    }
+    
+    .feature i {
+      color: var(--primary-color);
+    }
+
+    /* Sections */
+    .section-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 3rem;
+      color: var(--dark-color);
+      position: relative;
+    }
+    
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      right: 50%;
+      transform: translateX(50%);
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+      border-radius: 2px;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      border: none;
+      padding: 0.8rem 2rem;
+      font-weight: 600;
+      border-radius: 25px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(26, 127, 70, 0.3);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: #fff;
+      height: 100vh;
+      position: fixed;
+      right: 0;
+      width: 250px;
+      border-left: 1px solid #eee;
+      overflow-y: auto;
+      padding: 15px;
+    }
+    
+    .sidebar .user-info {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .sidebar .user-info img {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+    }
+    
+    .sidebar .user-info h5 { color: #4b0082; font-weight: 700; }
+    
+    .sidebar .wallet {
+      background: #f8f8f8;
+      padding: 8px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    
+    .sidebar ul { list-style: none; padding: 0; }
+    .sidebar li a {
+      display: flex; align-items: center;
+      color: #555; text-decoration: none;
+      padding: 10px 5px;
+      border-radius: 8px;
+    }
+    
+    .sidebar li a:hover, .sidebar li a.active {
+      background: #f0e6ff;
+      color: #4b0082;
+      font-weight: 600;
+    }
+    
+    .sidebar li i {
+      margin-left: 10px;
+      font-size: 18px;
+    }
+
+    /* Progress Bar */
+    .progress-container {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+    
+    .progress-label {
+      display: flex;
+      justify-content: between;
+      margin-bottom: 0.5rem;
+    }
+    
+    .progress-bar {
+      height: 8px;
+      background: #e9ecef;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 2.5rem;
+      }
+      
+      .section-title {
+        font-size: 2rem;
+      }
+      
+      .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- شاشة التحميل -->
+<div id="loadingOverlay">
+  <div class="multi-circle-spinner">
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="loading-text">جاري التحميل...</div>
+  </div>
+</div>
+
+<!-- شريط التنقل -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <i class="bi bi-mortarboard me-2"></i>احجزلي التعليمية
+    </a>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" href="#home">الرئيسية</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#courses">الكورسات</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#features">المميزات</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/dashboard">
+            <i class="bi bi-person me-1"></i>لوحة التعلم
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/login">
+            <i class="bi bi-box-arrow-in-left me-1"></i>تسجيل الدخول
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero-section" id="home">
+  <div class="container">
+    <div class="hero-content fade-in">
+      <h1 class="hero-title text-light">طور مهاراتك مع احجزلي التعليمية</h1>
+      <p class="hero-subtitle text-light">منصة تعليمية احترافية تقدم أفضل الكورسات في البرمجة، التسويق، اللغات، وتطوير الذات. ابدأ رحلتك التعليمية اليوم!</p>
+      <div class="hero-buttons">
+        <a href="#courses" class="btn btn-primary btn-lg">
+          <i class="bi bi-search me-2"></i>استعرض الكورسات
+        </a>
+        <a href="/dashboard" class="btn btn-outline-light btn-lg">
+          <i class="bi bi-rocket me-2"></i>ابدأ التعلم
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- قسم الكورسات المميزة -->
+<section class="py-5" id="courses">
+  <div class="container">
+    <h2 class="section-title">🎓 الكورسات المميزة</h2>
+    
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="search-box">
+          <input type="text" class="form-control" id="searchCourses" placeholder="🔍 ابحث عن كورسات...">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <select class="form-select" id="categoryFilter">
+          <option value="">جميع التصنيفات</option>
+          <option value="programming">برمجة وتطوير</option>
+          <option value="design">تصميم</option>
+          <option value="marketing">تسويق</option>
+          <option value="language">لغات</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select class="form-select" id="levelFilter">
+          <option value="">جميع المستويات</option>
+          <option value="beginner">مبتدئ</option>
+          <option value="intermediate">متوسط</option>
+          <option value="advanced">متقدم</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row" id="coursesContainer">
+      <!-- سيتم تعبئة الكورسات ديناميكياً -->
+    </div>
+  </div>
+</section>
+
+<!-- قسم المميزات -->
+<section class="features-section py-5 bg-light" id="features">
+  <div class="container">
+    <h2 class="section-title">✨ لماذا تختار منصتنا؟</h2>
+    <div class="row">
+      <div class="col-md-4 mb-4">
+        <div class="feature-card text-center">
+          <div class="feature-icon">
+            <i class="bi bi-play-circle"></i>
+          </div>
+          <h4>دروس فيديو عالية الجودة</h4>
+          <p>شاهد الدروس بأعلى جودة مع إمكانية التحكم في السرعة</p>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4">
+        <div class="feature-card text-center">
+          <div class="feature-icon">
+            <i class="bi bi-laptop"></i>
+          </div>
+          <h4>تعلم في أي وقت</h4>
+          <p>الدراسة متاحة 24/7 من أي جهاز ومن أي مكان</p>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4">
+        <div class="feature-card text-center">
+          <div class="feature-icon">
+            <i class="bi bi-award"></i>
+          </div>
+          <h4>شهادات معتمدة</h4>
+          <p>احصل على شهادات إتمام معتمدة بعد إنهاء كل كورس</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer bg-dark text-white py-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-4 col-md-6 mb-4">
+        <h5>منصة احجزلي التعليمية</h5>
+        <p>نحو مستقبل أفضل بالتعليم الإلكتروني. نقدم أفضل الكورسات في مختلف المجالات.</p>
+        <div class="social-links">
+          <a href="#"><i class="bi bi-facebook"></i></a>
+          <a href="#"><i class="bi bi-whatsapp"></i></a>
+          <a href="#"><i class="bi bi-instagram"></i></a>
+        </div>
+      </div>
+      <div class="col-lg-2 col-md-6 mb-4">
+        <h5>التصنيفات</h5>
+        <div class="footer-links">
+          <a href="#courses">برمجة</a>
+          <a href="#courses">تصميم</a>
+          <a href="#courses">تسويق</a>
+          <a href="#courses">لغات</a>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6 mb-4">
+        <h5>روابط سريعة</h5>
+        <div class="footer-links">
+          <a href="/dashboard">لوحة التعلم</a>
+          <a href="/courses">جميع الكورسات</a>
+          <a href="/profile">الملف الشخصي</a>
+          <a href="/support">الدعم</a>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6 mb-4">
+        <h5>اتصل بنا</h5>
+        <div class="footer-links">
+          <a href="tel:+201000000000"><i class="bi bi-phone me-2"></i>+20 100 000 0000</a>
+          <a href="mailto:info@ehgzly.com"><i class="bi bi-envelope me-2"></i>info@ehgzly.com</a>
+        </div>
+      </div>
+    </div>
+    <hr>
+    <div class="text-center py-3">
+      <p class="mb-0">&copy; 2024 منصة احجزلي التعليمية. جميع الحقوق محفوظة.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // دوال جلب وعرض الكورسات
+  async function loadCourses(filters = {}) {
+    try {
+      const params = new URLSearchParams();
+      if (filters.category) params.append('category', filters.category);
+      if (filters.level) params.append('level', filters.level);
+      if (filters.search) params.append('search', filters.search);
+
+      const res = await fetch(`/api/courses?${params}`);
+      const courses = await res.json();
+      
+      renderCourses(courses);
+    } catch (error) {
+      console.error('Error loading courses:', error);
+      renderDefaultCourses();
+    }
+  }
+
+  function renderCourses(courses) {
+    const container = document.getElementById('coursesContainer');
+    
+    if (!Array.isArray(courses) || courses.length === 0) {
+      container.innerHTML = `
+        <div class="col-12 text-center">
+          <div class="empty-state">
+            <i class="bi bi-search"></i>
+            <h5>لا توجد كورسات تطابق بحثك</h5>
+            <p>جرب تعديل فلتر البحث أو البحث بكلمات أخرى</p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = courses.map(course => `
+      <div class="col-lg-4 col-md-6 mb-4">
+        <div class="course-card h-100">
+          <div class="course-image" style="background-image: url('${course.image || 'https://placehold.co/600x400/1a7f46/white?text=كورس'}')">
+            <span class="course-badge">${course.category}</span>
+            <span class="course-price">${course.is_free ? 'مجاني' : course.price + ' ج.م'}</span>
+          </div>
+          <div class="course-info">
+            <h4 class="course-title">${course.title}</h4>
+            <p class="course-instructor">
+              <i class="bi bi-person"></i> ${course.instructor}
+            </p>
+            
+            <div class="course-features">
+              <span class="feature">
+                <i class="bi bi-clock"></i> ${course.duration} ساعة
+              </span>
+              <span class="feature">
+                <i class="bi bi-bar-chart"></i> ${course.level}
+              </span>
+              <span class="feature">
+                <i class="bi bi-play-circle"></i> ${course.lessons_count} درس
+              </span>
+            </div>
+
+            <div class="progress-container">
+              <div class="progress-label">
+                <span>التقدم</span>
+                <span>${course.progress || 0}%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${course.progress || 0}%"></div>
+              </div>
+            </div>
+
+            <button class="btn btn-primary w-100 mt-2" onclick="enrollCourse(${course.id})">
+              ${course.is_enrolled ? 'استكمال التعلم' : (course.is_free ? 'ابدأ الآن' : 'اشترك الآن')}
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderDefaultCourses() {
+    const defaultCourses = [
+      {
+        id: 1,
+        title: "تعلم البرمجة من الصفر",
+        instructor: "أحمد محمد",
+        category: "برمجة",
+        level: "مبتدئ",
+        duration: 40,
+        lessons_count: 25,
+        price: 150,
+        is_free: false,
+        progress: 0,
+        image: "https://placehold.co/600x400/3498db/white?text=برمجة"
+      },
+      {
+        id: 2,
+        title: "التسويق الرقمي المتقدم",
+        instructor: "سارة أحمد",
+        category: "تسويق",
+        level: "متوسط",
+        duration: 30,
+        lessons_count: 18,
+        price: 200,
+        is_free: false,
+        progress: 0,
+        image: "https://placehold.co/600x400/e74c3c/white?text=تسويق"
+      },
+      {
+        id: 3,
+        title: "الإنجليزية للمبتدئين",
+        instructor: "محمد علي",
+        category: "لغات",
+        level: "مبتدئ",
+        duration: 50,
+        lessons_count: 30,
+        price: 0,
+        is_free: true,
+        progress: 0,
+        image: "https://placehold.co/600x400/2ecc71/white?text=لغات"
+      }
+    ];
+
+    renderCourses(defaultCourses);
+  }
+
+  async function enrollCourse(courseId) {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        showToast('يرجى تسجيل الدخول أولاً', 'warning');
+        window.location.href = '/login';
+        return;
+      }
+
+      const res = await fetch('/api/enroll', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ courseId })
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        showToast('تم التسجيل في الكورس بنجاح', 'success');
+        window.location.href = `/course/${courseId}`;
+      } else {
+        const error = await res.json();
+        showToast(error.message, 'error');
+      }
+    } catch (error) {
+      console.error('Enrollment error:', error);
+      showToast('حدث خطأ أثناء التسجيل', 'error');
+    }
+  }
+
+  function showToast(message, type = 'success') {
+    // تنفيذ بسيط للإشعارات
+    alert(message);
+  }
+
+  // تهيئة الصفحة
+  document.addEventListener('DOMContentLoaded', function() {
+    loadCourses();
+    
+    // إعداد الفلاتر
+    document.getElementById('categoryFilter').addEventListener('change', function() {
+      loadCourses({
+        category: this.value,
+        level: document.getElementById('levelFilter').value,
+        search: document.getElementById('searchCourses').value
+      });
+    });
+
+    document.getElementById('levelFilter').addEventListener('change', function() {
+      loadCourses({
+        category: document.getElementById('categoryFilter').value,
+        level: this.value,
+        search: document.getElementById('searchCourses').value
+      });
+    });
+
+    document.getElementById('searchCourses').addEventListener('input', function() {
+      loadCourses({
+        category: document.getElementById('categoryFilter').value,
+        level: document.getElementById('levelFilter').value,
+        search: this.value
+      });
+    });
+
+    // إخفاء شاشة التحميل
+    setTimeout(() => {
+      document.getElementById('loadingOverlay').classList.add('fade-out');
+    }, 1000);
+  });
+</script>
+</body>
+</html>
