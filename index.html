@@ -9,13 +9,18 @@
     <meta name="description" content="Elmahdy English - منصة تعليمية احترافية لتقوية اللغة الإنجليزية مع أفضل المدرسين - طور مهاراتك في الإنجليزية معنا">
     <meta name="keywords" content="تعلم الإنجليزية, كورسات لغة, English Courses, Elmahdy English, تعليم الإنجليزية">
     <meta name="theme-color" content="#0056d6">
-    <meta property="og:image" content="/images/og-image.jpg">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Elmahdy English Team">
+    <meta property="og:image" content="https://placehold.co/1200x630/0056d6/ffffff?text=Elmahdy+English">
     <meta property="og:title" content="Elmahdy English - تعلم الإنجليزية بطريقة مختلفة">
     <meta property="og:description" content="دروس تفاعلية وشهادات معتمدة لتعلم اللغة الإنجليزية.">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com https://placehold.co; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com 'unsafe-inline';">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="icon" href="./images/favicon.png">
+    
+    <!-- تحسينات الأمان - نسخة معدلة -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob: https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com https://placehold.co; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com 'unsafe-inline';">
+    
+    <!-- Preload للموارد المهمة -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" as="style">
     
     <!-- Bootstrap + Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -43,14 +48,14 @@
         
         body {
             font-family: 'Cairo', sans-serif;
-            background-color: var(--light-color);
+            background: radial-gradient(circle at top right, #e8f0ff, #f8f9fb);
             color: var(--dark-color);
             overflow-x: hidden;
             transition: all 0.3s ease;
         }
 
         .dark-mode body {
-            background: #121212;
+            background: radial-gradient(circle at top right, #1a1a1a, #121212);
             color: #eee;
         }
 
@@ -95,6 +100,16 @@
         
         .nav-link:hover, .nav-link.active {
             color: var(--primary-color) !important;
+        }
+
+        /* Mobile Header */
+        .mobile-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            text-align: center;
+            padding: 8px 0;
+            font-weight: 600;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         /* Sidebar */
@@ -210,6 +225,11 @@
             text-align: center;
         }
 
+        .sidebar .badge {
+            font-size: 0.7rem;
+            margin-right: auto;
+        }
+
         /* Stats Bar */
         .stats-bar {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -282,7 +302,7 @@
         }
         
         .course-card:hover {
-            transform: translateY(-10px);
+            transform: translateY(-10px) scale(1.02);
             box-shadow: 0 20px 40px rgba(0,0,0,0.15);
         }
         
@@ -392,6 +412,14 @@
             color: var(--primary-color);
         }
 
+        /* Student Review */
+        .student-review {
+            border-right: 3px solid var(--accent-color);
+            padding-right: 10px;
+            margin: 10px 0;
+            font-style: italic;
+        }
+
         /* Progress Bar */
         .progress-container {
             background: #f8f9fa;
@@ -490,9 +518,68 @@
             height: 50px;
         }
 
+        /* Floating Buttons */
+        .floating-buttons {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1100;
+        }
+        
+        .floating-buttons button {
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
         /* Toast */
         .toast-container {
             z-index: 1050;
+        }
+
+        /* Animations */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .fade-up {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.6s ease-out;
+        }
+        
+        .fade-up.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* List View for Courses */
+        .course-card.list-view {
+            display: flex;
+            height: 200px;
+        }
+        
+        .course-card.list-view .course-image {
+            width: 40%;
+            height: 100%;
+        }
+        
+        .course-card.list-view .course-info {
+            width: 60%;
         }
 
         /* Responsive */
@@ -528,6 +615,11 @@
             #darkModeToggle {
                 bottom: 20px;
                 left: 20px;
+            }
+            
+            .floating-buttons {
+                bottom: 140px;
+                right: 20px;
             }
         }
 
@@ -578,55 +670,6 @@
         #loadingOverlay.fade-out {
             opacity: 0;
             pointer-events: none;
-        }
-        
-        .multi-circle-spinner {
-            text-align: center;
-        }
-        
-        .circle {
-            display: inline-block;
-            width: 15px;
-            height: 15px;
-            background-color: var(--primary-color);
-            border-radius: 50%;
-            margin: 0 5px;
-            animation: bounce 1.5s infinite ease-in-out;
-        }
-        
-        .circle:nth-child(2) {
-            animation-delay: 0.1s;
-        }
-        
-        .circle:nth-child(3) {
-            animation-delay: 0.2s;
-        }
-        
-        .circle:nth-child(4) {
-            animation-delay: 0.3s;
-        }
-        
-        .circle:nth-child(5) {
-            animation-delay: 0.4s;
-        }
-        
-        @keyframes bounce {
-            0%, 100% {
-                transform: translateY(0);
-            }
-            50% {
-                transform: translateY(-15px);
-            }
-        }
-        
-        .loading-text {
-            margin-top: 20px;
-            font-weight: 600;
-            color: var(--dark-color);
-        }
-        
-        .dark-mode .loading-text {
-            color: #eee;
         }
 
         /* Footer */
@@ -685,20 +728,48 @@
         .dark-mode .empty-state {
             color: #aaa;
         }
+
+        /* Student Cards */
+        .student-card {
+            text-align: center;
+            padding: 15px;
+        }
+        
+        .student-card img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            border: 3px solid var(--primary-color);
+        }
+        
+        .student-card p {
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* Accordion */
+        .accordion-button:not(.collapsed) {
+            background-color: rgba(0, 86, 214, 0.1);
+            color: var(--primary-color);
+        }
+        
+        .dark-mode .accordion-button {
+            background-color: #2a2a2a;
+            color: #eee;
+        }
+        
+        .dark-mode .accordion-body {
+            background-color: #1e1e1e;
+            color: #eee;
+        }
     </style>
 </head>
 <body>
 
 <!-- شاشة التحميل -->
 <div id="loadingOverlay">
-    <div class="multi-circle-spinner">
-        <div class="circle"></div>
-        <div class="circle"></div>
-        <div class="circle"></div>
-        <div class="circle"></div>
-        <div class="circle"></div>
-        <div class="loading-text">جاري تحميل Elmahdy English...</div>
-    </div>
+    <div class="spinner-border text-primary" role="status" style="width:4rem; height:4rem;"></div>
 </div>
 
 <!-- Toast Container -->
@@ -711,11 +782,19 @@
     </div>
 </div>
 
+<!-- Notifications Container -->
+<div class="position-fixed top-0 start-0 p-3" id="notifContainer" style="z-index: 1100;"></div>
+
+<!-- Mobile Header -->
+<div class="mobile-header bg-primary text-white text-center py-2 d-lg-none">
+    <i class="bi bi-lightning-charge"></i> مرحبًا بك في Elmahdy English! 🌟
+</div>
+
 <!-- شريط التنقل -->
 <nav class="navbar navbar-expand-lg navbar-light fixed-top">
     <div class="container">
         <a class="navbar-brand" href="/">
-            <img src="/images/elmahdy-logo.png" width="40" class="me-2" alt="Elmahdy English">
+            <img src="https://placehold.co/100x100/0056d6/ffffff?text=Logo" width="40" class="me-2 rounded" alt="Elmahdy English">
             Elmahdy English
         </a>
         
@@ -734,15 +813,15 @@
                 <li class="nav-item">
                     <a class="nav-link" href="#features">المميزات</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/dashboard">
-                        <i class="bi bi-person me-1"></i>لوحة التعلم
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        <img src="https://placehold.co/100x100/0056d6/ffffff?text=User" width="30" class="rounded-circle me-1"> محمد المهدي
                     </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/login">
-                        <i class="bi bi-box-arrow-in-left me-1"></i>تسجيل الدخول
-                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/dashboard"><i class="bi bi-speedometer2"></i> لوحة التحكم</a></li>
+                        <li><a class="dropdown-item" href="/profile"><i class="bi bi-person"></i> الملف الشخصي</a></li>
+                        <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right"></i> خروج</a></li>
+                    </ul>
                 </li>
             </ul>
         </div>
@@ -752,7 +831,7 @@
 <!-- Sidebar -->
 <div class="sidebar">
     <div class="user-info">
-        <img src="/images/student-avatar.png" alt="User">
+        <img src="https://placehold.co/100x100/0056d6/ffffff?text=User" alt="User">
         <h5>محمد المهدي</h5>
         <p class="text-muted">الصف الثالث الثانوي</p>
     </div>
@@ -763,9 +842,10 @@
     <ul>
         <li><a href="/" class="active"><i class="bi bi-house"></i> الرئيسية</a></li>
         <li><a href="/courses"><i class="bi bi-journal-bookmark"></i> الكورسات</a></li>
-        <li><a href="/my-courses"><i class="bi bi-play-circle"></i> محاضراتي</a></li>
+        <li><a href="/my-courses"><i class="bi bi-play-circle"></i> محاضراتي <span class="badge bg-primary ms-auto">3</span></a></li>
         <li><a href="/free"><i class="bi bi-gift"></i> المجانية</a></li>
         <li><a href="/tests"><i class="bi bi-pencil-square"></i> الامتحانات</a></li>
+        <li><a href="/notifications"><i class="bi bi-bell"></i> الإشعارات <span class="badge bg-warning text-dark ms-auto">2</span></a></li>
         <li><a href="/store"><i class="bi bi-basket"></i> متجر الكتب</a></li>
         <li><a href="/payments"><i class="bi bi-credit-card"></i> مدفوعاتي</a></li>
         <li><a href="/support"><i class="bi bi-headset"></i> الدعم</a></li>
@@ -775,6 +855,11 @@
 
 <!-- Main Content -->
 <div class="dashboard">
+    <!-- Countdown Alert -->
+    <div class="alert alert-info text-center mt-4" id="nextLessonCountdown">
+        ⏳ المحاضرة القادمة تبدأ بعد: <span id="timer"></span>
+    </div>
+
     <!-- Stats Bar -->
     <div class="stats-bar container d-flex justify-content-around text-center">
         <div><i class="bi bi-journal"></i><p>عدد الكورسات</p><h5 id="coursesCount">12</h5></div>
@@ -782,9 +867,22 @@
         <div><i class="bi bi-award"></i><p>شهادات</p><h5 id="certificatesCount">3</h5></div>
     </div>
 
+    <!-- Progress Bar -->
+    <div class="progress my-4" style="height:15px;">
+        <div class="progress-bar progress-bar-striped bg-success" style="width: 45%">45%</div>
+    </div>
+    <p class="text-center small text-muted">لقد أنجزت 45٪ من محتوى هذا الشهر!</p>
+
     <div class="container">
         <!-- Latest Courses -->
-        <h2 class="section-title">📚 أحدث محاضراتك</h2>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="section-title fade-up">📚 أحدث محاضراتك</h2>
+            <div class="d-flex">
+                <button id="gridView" class="btn btn-outline-primary btn-sm me-2"><i class="bi bi-grid"></i></button>
+                <button id="listView" class="btn btn-outline-secondary btn-sm"><i class="bi bi-list"></i></button>
+            </div>
+        </div>
+        
         <p class="text-muted mb-3" id="resultsCount">تم العثور على 0 كورس</p>
         
         <div class="row mb-4">
@@ -817,11 +915,86 @@
         </div>
 
         <!-- Monthly Bundles -->
-        <h2 class="section-title mt-5">🎁 باقات الشهر</h2>
+        <h2 class="section-title fade-up mt-5">🎁 باقات الشهر</h2>
         <div class="row" id="monthlyBundlesContainer">
             <!-- سيتم تعبئة الباقات ديناميكياً -->
         </div>
+
+        <!-- Featured Students -->
+        <h2 class="section-title fade-up mt-5">🏆 طلاب متميزون</h2>
+        <div class="row">
+            <div class="col-4 col-md-2 text-center student-card fade-up">
+                <img src="https://placehold.co/100x100/0056d6/ffffff?text=Student1" class="rounded-circle mb-2">
+                <p>أسماء خالد</p>
+            </div>
+            <div class="col-4 col-md-2 text-center student-card fade-up">
+                <img src="https://placehold.co/100x100/00c6ff/ffffff?text=Student2" class="rounded-circle mb-2">
+                <p>محمود أشرف</p>
+            </div>
+            <div class="col-4 col-md-2 text-center student-card fade-up">
+                <img src="https://placehold.co/100x100/ffc107/ffffff?text=Student3" class="rounded-circle mb-2">
+                <p>ياسمين أحمد</p>
+            </div>
+            <div class="col-4 col-md-2 text-center student-card fade-up">
+                <img src="https://placehold.co/100x100/28a745/ffffff?text=Student4" class="rounded-circle mb-2">
+                <p>كريم محمد</p>
+            </div>
+            <div class="col-4 col-md-2 text-center student-card fade-up">
+                <img src="https://placehold.co/100x100/dc3545/ffffff?text=Student5" class="rounded-circle mb-2">
+                <p>فاطمة علي</p>
+            </div>
+            <div class="col-4 col-md-2 text-center student-card fade-up">
+                <img src="https://placehold.co/100x100/6f42c1/ffffff?text=Student6" class="rounded-circle mb-2">
+                <p>عمر سعيد</p>
+            </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <section class="py-5 bg-light mt-5">
+            <div class="container">
+                <h2 class="section-title fade-up">❓ الأسئلة الشائعة</h2>
+                <div class="accordion fade-up" id="faq">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#q1">
+                                هل الشهادات معتمدة؟
+                            </button>
+                        </h2>
+                        <div id="q1" class="accordion-collapse collapse show">
+                            <div class="accordion-body">نعم، تصدر بعد إنهاء الكورس بنسبة حضور معينة.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q2">
+                                هل يمكنني الحصول على استرداد للأموال؟
+                            </button>
+                        </h2>
+                        <div id="q2" class="accordion-collapse collapse">
+                            <div class="accordion-body">نعم، خلال 7 أيام من الشراء إذا لم تبدأ المحتوى.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q3">
+                                كيف يمكنني التواصل مع الدعم الفني؟
+                            </button>
+                        </h2>
+                        <div id="q3" class="accordion-collapse collapse">
+                            <div class="accordion-body">يمكنك التواصل عبر البريد الإلكتروني أو رقم الواتساب الموجود في الصفحة.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
+</div>
+
+<!-- Floating Buttons -->
+<div class="floating-buttons">
+    <button class="btn btn-primary"><i class="bi bi-chat-dots"></i></button>
+    <button class="btn btn-warning"><i class="bi bi-bookmark-heart"></i></button>
+    <button class="btn btn-danger" id="scrollToTop"><i class="bi bi-arrow-up"></i></button>
 </div>
 
 <!-- Dark Mode Toggle -->
@@ -887,16 +1060,14 @@
         try {
             showLoading(true);
             
-            const params = new URLSearchParams();
-            if (filters.category) params.append('category', filters.category);
-            if (filters.level) params.append('level', filters.level);
-            if (filters.search) params.append('search', filters.search);
-
-            const res = await fetch(`/api/courses?${params}`);
-            const courses = await res.json();
+            // استخدام ملف محلي بدلاً من API لتجنب مشاكل CORS
+            // const res = await fetch(`/api/courses?${params}`);
+            // const courses = await res.json();
             
-            renderCourses(courses);
-            updateResultsCount(courses.length);
+            // استخدام بيانات افتراضية مؤقتاً
+            renderDefaultCourses();
+            updateResultsCount(3); // عدد الكورسات الافتراضية
+            
         } catch (error) {
             console.error('Error loading courses:', error);
             renderDefaultCourses();
@@ -923,7 +1094,7 @@
 
         container.innerHTML = courses.map(course => `
             <div class="col-lg-4 col-md-6 mb-4">
-                <div class="course-card h-100">
+                <div class="course-card h-100 fade-in-up">
                     <div class="course-image" style="background-image: url('${course.image || 'https://placehold.co/600x400/0056d6/white?text=English+Course'}')">
                         <span class="course-badge">${course.category}</span>
                         <span class="course-price">${course.is_free ? 'مجاني' : course.price + ' ج.م'}</span>
@@ -949,6 +1120,10 @@
                             <i class="bi bi-star-half"></i>
                             <i class="bi bi-star"></i>
                             <small>(${course.rating || '4.3'})</small>
+                        </div>
+                        
+                        <div class="student-review small text-muted">
+                            <i class="bi bi-chat-quote"></i> "${course.review || 'الكورس ساعدني جدًا في المحادثة!'}"
                         </div>
                         
                         <div class="course-features">
@@ -986,8 +1161,8 @@
             </div>
         `).join('');
         
-        // Lazy loading للصور
-        initLazyLoading();
+        // تفعيل الأنيميشن
+        initScrollAnimations();
     }
     
     function renderDefaultCourses() {
@@ -1004,6 +1179,7 @@
                 is_free: false,
                 progress: 30,
                 rating: "4.5",
+                review: "شرح رائع ومنظم، أنصح به للمبتدئين",
                 image: "https://placehold.co/600x400/0056d6/white?text=Beginner+English"
             },
             {
@@ -1018,6 +1194,7 @@
                 is_free: false,
                 progress: 0,
                 rating: "4.8",
+                review: "المحتوى عملي جداً وساعدني في العمل",
                 image: "https://placehold.co/600x400/00c6ff/white?text=Conversation"
             },
             {
@@ -1032,6 +1209,7 @@
                 is_free: true,
                 progress: 0,
                 rating: "4.3",
+                review: "شرح مبسط وسهل الفهم للمبتدئين",
                 image: "https://placehold.co/600x400/ffc107/white?text=Grammar"
             }
         ];
@@ -1065,7 +1243,7 @@
         const container = document.getElementById('monthlyBundlesContainer');
         container.innerHTML = bundles.map(bundle => `
             <div class="col-lg-6 col-md-12 mb-4">
-                <div class="course-card">
+                <div class="course-card fade-in-up">
                     <div class="course-image" style="background-image: url('${bundle.image}')">
                         <span class="course-badge">باقة خاصة</span>
                         <span class="course-price" style="text-decoration: line-through; opacity: 0.7;">${bundle.originalPrice} ج.م</span>
@@ -1081,6 +1259,9 @@
                 </div>
             </div>
         `).join('');
+        
+        // تفعيل الأنيميشن
+        initScrollAnimations();
     }
 
     async function enrollCourse(courseId) {
@@ -1092,25 +1273,21 @@
                 return;
             }
 
-            const res = await fetch('/api/enroll', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ courseId })
-            });
-
-            if (res.ok) {
-                const result = await res.json();
+            // محاكاة API call
+            setTimeout(() => {
                 showToast('تم التسجيل في الكورس بنجاح', 'success');
+                pushNotification('🎉 تم إضافة كورس جديد إلى مكتبتك!', 'success');
+                
                 // حفظ التقدم
-                await saveProgress(courseId, 1);
-                window.location.href = `/course/${courseId}`;
-            } else {
-                const error = await res.json();
-                showToast(error.message, 'danger');
-            }
+                saveProgress(courseId, 1);
+                
+                // عرض إشعار النقاط
+                setTimeout(() => {
+                    showToast('🌟 حصلت على 20 نقطة بعد إنهاء محاضرة "Speaking Basics"!', 'info');
+                }, 1500);
+                
+            }, 1000);
+
         } catch (error) {
             console.error('Enrollment error:', error);
             showToast('حدث خطأ أثناء التسجيل', 'danger');
@@ -1122,21 +1299,16 @@
             const token = localStorage.getItem('authToken');
             if (!token) return;
             
-            await fetch('/api/progress', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({courseId, lessonId})
-            });
+            // محاكاة حفظ التقدم
+            console.log(`Progress saved: Course ${courseId}, Lesson ${lessonId}`);
         } catch (error) {
             console.error('Error saving progress:', error);
         }
     }
     
     function viewCourseDetails(courseId) {
-        window.location.href = `/course/${courseId}`;
+        // محاكاة الانتقال لصفحة الكورس
+        showToast(`جاري تحميل تفاصيل الكورس ${courseId}`, 'info');
     }
     
     function updateResultsCount(count) {
@@ -1153,7 +1325,7 @@
         const toastBody = toastEl.querySelector('.toast-body');
         
         // إزالة كلاسسات اللون السابقة
-        toastEl.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'bg-primary');
+        toastEl.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'bg-primary', 'bg-info');
         
         // إضافة لون حسب النوع
         switch(type) {
@@ -1166,6 +1338,9 @@
             case 'warning':
                 toastEl.classList.add('bg-warning');
                 break;
+            case 'info':
+                toastEl.classList.add('bg-info');
+                break;
             default:
                 toastEl.classList.add('bg-primary');
         }
@@ -1175,29 +1350,46 @@
         toast.show();
     }
     
-    // Lazy Loading للصور
-    function initLazyLoading() {
-        const imgs = document.querySelectorAll('.lazyload');
-        const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    img.src = img.dataset.src;
-                    observer.unobserve(img);
-                }
-            });
-        });
-        
-        imgs.forEach(img => observer.observe(img));
+    // Push Notification System
+    function pushNotification(msg, color = 'primary') {
+        const el = document.createElement('div');
+        el.className = `alert alert-${color} fade show mb-2`;
+        el.innerText = msg;
+        document.getElementById('notifContainer').appendChild(el);
+        setTimeout(() => {
+            el.classList.remove('show');
+            setTimeout(() => el.remove(), 300);
+        }, 4000);
     }
     
-    // Dark Mode Toggle
+    // Animation Systems
+    function initScrollAnimations() {
+        const elements = document.querySelectorAll('.fade-in-up');
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(e => {
+                if (e.isIntersecting) e.target.classList.add('visible');
+            });
+        });
+        elements.forEach(el => observer.observe(el));
+    }
+    
+    function initFadeUpAnimations() {
+        const elements = document.querySelectorAll('.fade-up');
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(e => {
+                if (e.isIntersecting) e.target.classList.add('show');
+            });
+        });
+        elements.forEach(el => observer.observe(el));
+    }
+    
+    // Dark Mode System
     function initDarkMode() {
         const toggle = document.getElementById('darkModeToggle');
         const icon = toggle.querySelector('i');
         
-        // التحقق من الإعدادات المحفوظة
-        const isDarkMode = localStorage.getItem('darkMode') === 'true';
+        // التحقق من الإعدادات المحفوظة أو الوقت الحالي
+        const isDarkMode = localStorage.getItem('darkMode') === 'true' || shouldAutoDarkMode();
         if (isDarkMode) {
             document.body.classList.add('dark-mode');
             icon.classList.remove('bi-moon');
@@ -1222,6 +1414,38 @@
         };
     }
     
+    function shouldAutoDarkMode() {
+        const hour = new Date().getHours();
+        return hour >= 20 || hour < 6;
+    }
+    
+    // Countdown Timer
+    function initCountdown() {
+        const eventDate = new Date("2024-12-10T18:00:00").getTime();
+        const timerElement = document.getElementById('timer');
+        
+        if (!timerElement) return;
+        
+        const updateTimer = () => {
+            const now = new Date().getTime();
+            const diff = eventDate - now;
+            
+            if (diff < 0) {
+                timerElement.innerText = 'بدأت المحاضرة!';
+                return;
+            }
+            
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            timerElement.innerText = `${d}ي ${h}س ${m}د`;
+        };
+        
+        updateTimer();
+        setInterval(updateTimer, 60000); // تحديث كل دقيقة
+    }
+    
     // Sidebar Toggle للهواتف
     function initSidebarToggle() {
         const sidebar = document.querySelector('.sidebar');
@@ -1242,6 +1466,40 @@
                 sidebar.classList.remove('active');
             }
         });
+    }
+    
+    // View Toggle (Grid/List)
+    function initViewToggle() {
+        const gridView = document.getElementById('gridView');
+        const listView = document.getElementById('listView');
+        
+        if (gridView && listView) {
+            gridView.onclick = () => {
+                document.querySelectorAll('.course-card').forEach(c => c.classList.remove('list-view'));
+                gridView.classList.add('btn-primary');
+                gridView.classList.remove('btn-outline-primary');
+                listView.classList.add('btn-outline-secondary');
+                listView.classList.remove('btn-secondary');
+            };
+            
+            listView.onclick = () => {
+                document.querySelectorAll('.course-card').forEach(c => c.classList.add('list-view'));
+                listView.classList.add('btn-secondary');
+                listView.classList.remove('btn-outline-secondary');
+                gridView.classList.add('btn-outline-primary');
+                gridView.classList.remove('btn-primary');
+            };
+        }
+    }
+    
+    // Scroll to Top
+    function initScrollToTop() {
+        const button = document.getElementById('scrollToTop');
+        if (button) {
+            button.onclick = () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+        }
     }
 
     // تهيئة الصفحة
@@ -1278,11 +1536,19 @@
             document.getElementById('loadingOverlay').classList.add('fade-out');
         }, 1500);
         
-        // تهيئة Dark Mode
+        // تهيئة جميع الأنظمة
         initDarkMode();
-        
-        // تهيئة Sidebar Toggle
         initSidebarToggle();
+        initViewToggle();
+        initScrollToTop();
+        initCountdown();
+        initScrollAnimations();
+        initFadeUpAnimations();
+        
+        // إشعار ترحيبي
+        setTimeout(() => {
+            pushNotification('🎊 مرحباً بك في Elmahdy English! ابدأ رحلتك التعليمية الآن.', 'info');
+        }, 2000);
         
         // تأثير التمرير على النافبار
         window.addEventListener('scroll', function() {
