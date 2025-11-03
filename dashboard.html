@@ -1,100 +1,909 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التعلم - منصة التعليم</title>
-    <!-- نفس الـ styles -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة التعلم - منصة التعليم</title>
+  
+  <!-- Bootstrap + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #5dade2;
+      --accent-color: #85c1e9;
+      --success-color: #2ecc71;
+      --warning-color: #f39c12;
+      --dark-color: #2c3e50;
+      --light-color: #ecf0f1;
+    }
+    
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: #f8f9fa;
+    }
+    
+    .dashboard-card {
+      max-width: 1400px;
+      margin: 1rem auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    
+    .dashboard-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+      padding: 2.5rem 2rem;
+      color: white;
+      text-align: center;
+      position: relative;
+    }
+    
+    .avatar-container {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 4px solid white;
+      background: #ddd;
+      object-fit: cover;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    
+    .stat-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      border: 1px solid #e9ecef;
+      transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+      color: #666;
+      font-size: 0.9rem;
+    }
+    
+    .nav-links {
+      background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+      padding: 1rem 0;
+    }
+    
+    .nav-links a {
+      color: white;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: 600;
+      transition: opacity 0.3s ease;
+    }
+    
+    .nav-links a:hover {
+      opacity: 0.8;
+    }
+    
+    .course-card {
+      border: 2px solid #e9ecef;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      transition: all 0.3s ease;
+      background: white;
+    }
+    
+    .course-card:hover {
+      border-color: var(--primary-color);
+      box-shadow: 0 5px 20px rgba(52, 152, 219, 0.1);
+    }
+    
+    .course-card.featured {
+      border-color: var(--warning-color);
+      background: linear-gradient(135deg, #fff9e6, #fff3cd);
+    }
+    
+    .progress-bar {
+      height: 8px;
+      background: #e9ecef;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0.5rem 0;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    
+    .grade-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+    
+    .grade-A { background: var(--success-color); color: white; }
+    .grade-B { background: #3498db; color: white; }
+    .grade-C { background: #f39c12; color: white; }
+    .grade-D { background: #e74c3c; color: white; }
+    
+    .alert {
+      border: none;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 1rem;
+    }
+    
+    .loading-spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 3rem;
+    }
+    
+    .section-title {
+      color: var(--dark-color);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 3px solid var(--primary-color);
+      display: inline-block;
+    }
+    
+    .achievement-badge {
+      background: linear-gradient(135deg, var(--warning-color), #e67e22);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      margin: 0.25rem;
+      display: inline-block;
+    }
+    
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    
+    .action-btn {
+      background: white;
+      border: 2px solid var(--primary-color);
+      color: var(--primary-color);
+      padding: 1rem;
+      border-radius: 12px;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+    
+    .action-btn:hover {
+      background: var(--primary-color);
+      color: white;
+      transform: translateY(-2px);
+    }
+    
+    .recent-activity {
+      background: #f8f9fa;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      border: 1px solid #e9ecef;
+    }
+    
+    .activity-item {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+    
+    .certificate-card {
+      background: linear-gradient(135deg, #fff, #f8f9fa);
+      border: 2px solid var(--success-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .dashboard-header {
+        padding: 2rem 1rem;
+      }
+      
+      .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
 </head>
 <body>
-    <!-- نفس الـ navbar -->
 
-    <div class="container-fluid mt-5">
-        <div class="row">
-            <!-- Sidebar -->
-            <aside class="col-md-3 sidebar">
-                <!-- نفس الـ sidebar مع إضافة روابط خاصة بالطالب -->
-            </aside>
-
-            <!-- المحتوى الرئيسي -->
-            <main class="col-md-9">
-                <div class="container py-4">
-                    <h2 class="section-title">🎯 لوحة التعلم</h2>
-
-                    <!-- إحصائيات سريعة -->
-                    <div class="row mb-4">
-                        <div class="col-md-3">
-                            <div class="stat-card">
-                                <h4 id="enrolledCourses">0</h4>
-                                <p>الكورسات المسجل فيها</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-card">
-                                <h4 id="completedCourses">0</h4>
-                                <p>الكورسات المكتملة</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-card">
-                                <h4 id="totalProgress">0%</h4>
-                                <p>متوسط التقدم</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-card">
-                                <h4 id="studyTime">0</h4>
-                                <p>ساعات الدراسة</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- الكورسات الجارية -->
-                    <div class="current-courses mb-4">
-                        <h3>📚 الكورسات الجارية</h3>
-                        <div class="row" id="currentCoursesContainer">
-                            <!-- سيتم تعبئة الكورسات الجارية هنا -->
-                        </div>
-                    </div>
-
-                    <!-- الكورسات الموصى بها -->
-                    <div class="recommended-courses">
-                        <h3>✨ كورسات مقترحة لك</h3>
-                        <div class="row" id="recommendedCoursesContainer">
-                            <!-- سيتم تعبئة الكورسات المقترحة هنا -->
-                        </div>
-                    </div>
-                </div>
-            </main>
+  <nav class="nav-links">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center">
+        <a class="navbar-brand text-white fw-bold" href="/">
+          <i class="bi bi-mortarboard-fill me-2"></i> منصة التعليم
+        </a>
+        <div>
+          <a href="/">
+            <i class="bi bi-house me-1"></i> الرئيسية
+          </a>
+          <a href="/courses">
+            <i class="bi bi-book me-1"></i> الكورسات
+          </a>
+          <a href="/dashboard" id="dashboardLink">
+            <i class="bi bi-speedometer2 me-1"></i> لوحة التعلم
+          </a>
+          <a href="#" onclick="logout()">
+            <i class="bi bi-box-arrow-left me-1"></i> تسجيل الخروج
+          </a>
         </div>
+      </div>
     </div>
+  </nav>
 
-    <script>
-        // دوال جلب بيانات لوحة التعلم
-        async function loadDashboardData() {
-            try {
-                const [currentCourses, recommendedCourses, stats] = await Promise.all([
-                    fetch('/api/user/courses').then(r => r.json()),
-                    fetch('/api/courses/recommended').then(r => r.json()),
-                    fetch('/api/user/stats').then(r => r.json())
-                ]);
+  <div class="container my-4">
+    <div class="dashboard-card">
+      <!-- رأس اللوحة -->
+      <div class="dashboard-header">
+        <div class="avatar-container">
+          <img id="avatarImage" src="/images/default-avatar.png" alt="الصورة الشخصية" class="avatar" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiNkZGRkZGQiLz4KPHBhdGggZD0iTTUwIDI1QzU1LjUgMjUgNjAgMjkuNSA2MCAzNUM2MCA0MC41IDU1LjUgNDUgNTAgNDVDNDQuNSA0NSA0MCA0MC41IDQwIDM1QzQwIDI5LjUgNDQuNSAyNSA1MCAyNVpNNTAgNzVDNjAuOCA3NSA2OS42IDcwIDY5LjYgNjBWNTVDNjkuNiA0NSA2MC44IDQwIDUwIDQwQzM5LjIgNDAgMzAuNCA0NSAzMC40IDU1VjYwQzMwLjQgNzAgMzkuMiA3NSA1MCA3NVoiIGZpbGw9IiM5OTk5OTkiLz4KPC9zdmc+Cg=='">
+        </div>
+        <h2 id="studentName" class="mt-3 mb-1">الطالب</h2>
+        <p id="studentLevel" class="text-light mb-0">المستوى: مبتدئ</p>
+        <p id="joinDate" class="text-light">منضم منذ: --</p>
+        <div class="mt-3" id="achievementsContainer">
+          <!-- سيتم تعبئة الإنجازات هنا -->
+        </div>
+      </div>
 
-                renderCurrentCourses(currentCourses);
-                renderRecommendedCourses(recommendedCourses);
-                updateStats(stats);
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
-            }
+      <!-- نظام التنبيهات -->
+      <div id="alertsContainer" aria-live="polite" aria-atomic="true"></div>
+
+      <!-- المحتوى الرئيسي -->
+      <div class="container mt-4">
+        <!-- إحصائيات سريعة -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number" id="enrolledCourses">0</div>
+            <div class="stat-label">الكورسات المسجل فيها</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="completedCourses">0</div>
+            <div class="stat-label">الكورسات المكتملة</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="totalProgress">0%</div>
+            <div class="stat-label">متوسط التقدم</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="studyTime">0</div>
+            <div class="stat-label">ساعات الدراسة</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="averageGrade">-</div>
+            <div class="stat-label">المعدل التراكمي</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="certificates">0</div>
+            <div class="stat-label">الشهادات المحصل عليها</div>
+          </div>
+        </div>
+
+        <!-- إجراءات سريعة -->
+        <div class="quick-actions">
+          <a href="/courses" class="action-btn">
+            <i class="bi bi-search me-2"></i>اكتشف كورسات
+          </a>
+          <a href="/my-courses" class="action-btn">
+            <i class="bi bi-play-circle me-2"></i>واصل التعلم
+          </a>
+          <a href="/assignments" class="action-btn">
+            <i class="bi bi-pencil-square me-2"></i>الواجبات
+          </a>
+          <a href="/certificates" class="action-btn">
+            <i class="bi bi-award me-2"></i>شهاداتي
+          </a>
+        </div>
+
+        <div class="row">
+          <!-- الكورسات الجارية -->
+          <div class="col-md-8">
+            <div class="recent-activity">
+              <h3 class="section-title">📚 الكورسات الجارية</h3>
+              <div id="currentCoursesContainer">
+                <div class="loading-spinner">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">جاري التحميل...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- الكورسات الموصى بها -->
+            <div class="recent-activity">
+              <h3 class="section-title">✨ كورسات مقترحة لك</h3>
+              <div id="recommendedCoursesContainer">
+                <div class="loading-spinner">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">جاري التحميل...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- الجانب الأيمن -->
+          <div class="col-md-4">
+            <!-- آخر النشاطات -->
+            <div class="recent-activity">
+              <h3 class="section-title">🕒 آخر النشاطات</h3>
+              <div id="recentActivities">
+                <div class="loading-spinner">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">جاري التحميل...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- الإنجازات -->
+            <div class="recent-activity">
+              <h3 class="section-title">🏆 إنجازاتي</h3>
+              <div id="achievementsList">
+                <div class="loading-spinner">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">جاري التحميل...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- الشهادات الحديثة -->
+            <div class="recent-activity">
+              <h3 class="section-title">📜 الشهادات الحديثة</h3>
+              <div id="recentCertificates">
+                <div class="loading-spinner">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">جاري التحميل...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // نظام لوحة تعلم الطالب
+    class StudentDashboardSystem {
+      constructor() {
+        this.currentCourses = [];
+        this.recommendedCourses = [];
+        this.studentStats = {};
+        this.recentActivities = [];
+        this.achievements = [];
+        this.certificates = [];
+        this.init();
+      }
+
+      init() {
+        this.loadDashboardData();
+        this.setupEventListeners();
+      }
+
+      async loadDashboardData() {
+        try {
+          this.showLoadingStates();
+          
+          await Promise.all([
+            this.loadStudentProfile(),
+            this.loadCurrentCourses(),
+            this.loadRecommendedCourses(),
+            this.loadStudentStats(),
+            this.loadRecentActivities(),
+            this.loadAchievements(),
+            this.loadCertificates()
+          ]);
+        } catch (error) {
+          console.error('Error loading dashboard data:', error);
+          this.showAlert('❌ حدث خطأ أثناء تحميل البيانات', 'danger');
+        }
+      }
+
+      showLoadingStates() {
+        const loadingHTML = `
+          <div class="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">جاري التحميل...</span>
+            </div>
+          </div>
+        `;
+        
+        document.getElementById('currentCoursesContainer').innerHTML = loadingHTML;
+        document.getElementById('recommendedCoursesContainer').innerHTML = loadingHTML;
+        document.getElementById('recentActivities').innerHTML = loadingHTML;
+        document.getElementById('achievementsList').innerHTML = loadingHTML;
+        document.getElementById('recentCertificates').innerHTML = loadingHTML;
+      }
+
+      async loadStudentProfile() {
+        try {
+          const response = await fetch('/api/student/profile', { 
+            credentials: 'include',
+            headers: this.getAuthHeaders()
+          });
+          
+          if (!response.ok) throw new Error(`Server error: ${response.status}`);
+          
+          const profile = await response.json();
+          this.displayStudentProfile(profile);
+        } catch (error) {
+          console.error('Error loading student profile:', error);
+          throw error;
+        }
+      }
+
+      async loadCurrentCourses() {
+        try {
+          const response = await fetch('/api/student/courses/current', { 
+            credentials: 'include',
+            headers: this.getAuthHeaders()
+          });
+          
+          if (!response.ok) throw new Error(`Server error: ${response.status}`);
+          
+          this.currentCourses = await response.json();
+          this.displayCurrentCourses();
+        } catch (error) {
+          console.error('Error loading current courses:', error);
+          throw error;
+        }
+      }
+
+      async loadRecommendedCourses() {
+        try {
+          const response = await fetch('/api/courses/recommended', { 
+            credentials: 'include',
+            headers: this.getAuthHeaders()
+          });
+          
+          if (!response.ok) throw new Error(`Server error: ${response.status}`);
+          
+          this.recommendedCourses = await response.json();
+          this.displayRecommendedCourses();
+        } catch (error) {
+          console.error('Error loading recommended courses:', error);
+          throw error;
+        }
+      }
+
+      async loadStudentStats() {
+        try {
+          const response = await fetch('/api/student/stats', { 
+            credentials: 'include',
+            headers: this.getAuthHeaders()
+          });
+          
+          if (!response.ok) throw new Error(`Server error: ${response.status}`);
+          
+          this.studentStats = await response.json();
+          this.updateStatsGrid();
+        } catch (error) {
+          console.error('Error loading student stats:', error);
+          throw error;
+        }
+      }
+
+      async loadRecentActivities() {
+        try {
+          const response = await fetch('/api/student/activities', { 
+            credentials: 'include',
+            headers: this.getAuthHeaders()
+          });
+          
+          if (!response.ok) throw new Error(`Server error: ${response.status}`);
+          
+          this.recentActivities = await response.json();
+          this.displayRecentActivities();
+        } catch (error) {
+          console.error('Error loading recent activities:', error);
+          throw error;
+        }
+      }
+
+      async loadAchievements() {
+        try {
+          const response = await fetch('/api/student/achievements', { 
+            credentials: 'include',
+            headers: this.getAuthHeaders()
+          });
+          
+          if (!response.ok) throw new Error(`Server error: ${response.status}`);
+          
+          this.achievements = await response.json();
+          this.displayAchievements();
+        } catch (error) {
+          console.error('Error loading achievements:', error);
+          throw error;
+        }
+      }
+
+      async loadCertificates() {
+        try {
+          const response = await fetch('/api/student/certificates', { 
+            credentials: 'include',
+            headers: this.getAuthHeaders()
+          });
+          
+          if (!response.ok) throw new Error(`Server error: ${response.status}`);
+          
+          this.certificates = await response.json();
+          this.displayRecentCertificates();
+        } catch (error) {
+          console.error('Error loading certificates:', error);
+          throw error;
+        }
+      }
+
+      displayStudentProfile(profile) {
+        document.getElementById('studentName').textContent = this.sanitizeHTML(profile.name || 'الطالب');
+        document.getElementById('studentLevel').textContent = `المستوى: ${profile.level || 'مبتدئ'}`;
+        
+        if (profile.joinDate) {
+          document.getElementById('joinDate').textContent = `منضم منذ: ${new Date(profile.joinDate).toLocaleDateString('ar-EG')}`;
+        }
+        
+        if (profile.avatar) {
+          document.getElementById('avatarImage').src = profile.avatar;
+        }
+      }
+
+      displayCurrentCourses() {
+        const container = document.getElementById('currentCoursesContainer');
+        
+        if (this.currentCourses.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-4">
+              <i class="bi bi-book display-4 text-muted"></i>
+              <p class="text-muted mt-2">لا توجد كورسات جارية</p>
+              <a href="/courses" class="btn btn-primary mt-2">اكتشف الكورسات</a>
+            </div>
+          `;
+          return;
         }
 
-        function renderCurrentCourses(courses) {
-            const container = document.getElementById('currentCoursesContainer');
-            // عرض الكورسات مع شريط التقدم
+        container.innerHTML = this.currentCourses.map(course => `
+          <div class="course-card ${course.featured ? 'featured' : ''}">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="flex-grow-1">
+                <h6 class="mb-1">${this.sanitizeHTML(course.title)}</h6>
+                <p class="mb-2 text-muted">${this.sanitizeHTML(course.instructor)}</p>
+                
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: ${course.progress || 0}%"></div>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-muted small">${course.progress || 0}% مكتمل</span>
+                  ${course.nextLesson ? `
+                    <span class="badge bg-primary">الحصة القادمة: ${course.nextLesson}</span>
+                  ` : ''}
+                </div>
+              </div>
+              <div class="text-left ms-3">
+                ${course.grade ? `
+                  <span class="grade-badge grade-${course.grade}">${course.grade}</span>
+                ` : ''}
+                <button class="btn btn-outline-primary btn-sm mt-2" onclick="dashboardSystem.continueCourse('${course.id}')">
+                  <i class="bi bi-play-fill"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      displayRecommendedCourses() {
+        const container = document.getElementById('recommendedCoursesContainer');
+        
+        if (this.recommendedCourses.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-4">
+              <i class="bi bi-stars display-4 text-muted"></i>
+              <p class="text-muted mt-2">لا توجد توصيات حالياً</p>
+            </div>
+          `;
+          return;
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            loadDashboardData();
+        container.innerHTML = this.recommendedCourses.map(course => `
+          <div class="course-card">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="flex-grow-1">
+                <h6 class="mb-1">${this.sanitizeHTML(course.title)}</h6>
+                <p class="mb-2 text-muted">${this.sanitizeHTML(course.instructor)}</p>
+                <p class="mb-2 small">${this.sanitizeHTML(course.description)}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-primary fw-bold">${course.price === 0 ? 'مجاني' : course.price + ' ج.م'}</span>
+                  <span class="badge bg-secondary">${course.duration}</span>
+                </div>
+              </div>
+              <div class="text-left ms-3">
+                <button class="btn btn-primary btn-sm" onclick="dashboardSystem.enrollInCourse('${course.id}')">
+                  <i class="bi bi-cart-plus"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      displayRecentActivities() {
+        const container = document.getElementById('recentActivities');
+        
+        if (this.recentActivities.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-3">
+              <p class="text-muted">لا توجد نشاطات حديثة</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = this.recentActivities.map(activity => `
+          <div class="activity-item">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-${this.getActivityIcon(activity.type)} text-primary me-2"></i>
+              <div class="flex-grow-1">
+                <div class="small">${this.sanitizeHTML(activity.description)}</div>
+                <div class="text-muted smaller">${new Date(activity.timestamp).toLocaleString('ar-EG')}</div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      displayAchievements() {
+        const container = document.getElementById('achievementsList');
+        const headerContainer = document.getElementById('achievementsContainer');
+        
+        if (this.achievements.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-3">
+              <p class="text-muted">لا توجد إنجازات بعد</p>
+            </div>
+          `;
+          headerContainer.innerHTML = '<span class="badge bg-secondary">لا توجد إنجازات</span>';
+          return;
+        }
+
+        // عرض الإنجازات في الهيدر
+        headerContainer.innerHTML = this.achievements.slice(0, 3).map(achievement => `
+          <span class="achievement-badge">${this.sanitizeHTML(achievement.title)}</span>
+        `).join('');
+
+        // عرض جميع الإنجازات في القائمة
+        container.innerHTML = this.achievements.map(achievement => `
+          <div class="activity-item">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-trophy-fill text-warning me-2"></i>
+              <div class="flex-grow-1">
+                <div class="small fw-bold">${this.sanitizeHTML(achievement.title)}</div>
+                <div class="text-muted smaller">${this.sanitizeHTML(achievement.description)}</div>
+                <div class="text-muted smaller">${new Date(achievement.earnedAt).toLocaleDateString('ar-EG')}</div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      displayRecentCertificates() {
+        const container = document.getElementById('recentCertificates');
+        
+        if (this.certificates.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-3">
+              <p class="text-muted">لا توجد شهادات</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = this.certificates.slice(0, 2).map(certificate => `
+          <div class="certificate-card">
+            <h6 class="mb-1">${this.sanitizeHTML(certificate.courseTitle)}</h6>
+            <p class="mb-2 text-muted small">${this.sanitizeHTML(certificate.grade)}</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="small">${new Date(certificate.issuedAt).toLocaleDateString('ar-EG')}</span>
+              <button class="btn btn-outline-success btn-sm" onclick="dashboardSystem.viewCertificate('${certificate.id}')">
+                <i class="bi bi-download"></i>
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      updateStatsGrid() {
+        const stats = this.studentStats;
+        document.getElementById('enrolledCourses').textContent = stats.enrolledCourses || 0;
+        document.getElementById('completedCourses').textContent = stats.completedCourses || 0;
+        document.getElementById('totalProgress').textContent = (stats.averageProgress || 0) + '%';
+        document.getElementById('studyTime').textContent = (stats.totalStudyTime || 0) + 'h';
+        document.getElementById('averageGrade').textContent = stats.averageGrade || '-';
+        document.getElementById('certificates').textContent = stats.certificatesCount || 0;
+      }
+
+      getActivityIcon(activityType) {
+        const icons = {
+          'course_started': 'play-fill',
+          'course_completed': 'check-circle-fill',
+          'assignment_submitted': 'pencil-fill',
+          'quiz_completed': 'clipboard-check',
+          'certificate_earned': 'award-fill'
+        };
+        return icons[activityType] || 'activity';
+      }
+
+      async continueCourse(courseId) {
+        window.location.href = `/course/${courseId}/learn`;
+      }
+
+      async enrollInCourse(courseId) {
+        try {
+          const response = await fetch(`/api/courses/${courseId}/enroll`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: this.getAuthHeaders()
+          });
+
+          if (response.ok) {
+            this.showAlert('✅ تم التسجيل في الكورس بنجاح', 'success');
+            this.loadDashboardData();
+          } else {
+            this.showAlert('❌ حدث خطأ أثناء التسجيل', 'danger');
+          }
+        } catch (error) {
+          console.error('Error enrolling in course:', error);
+          this.showAlert('❌ حدث خطأ أثناء التسجيل', 'danger');
+        }
+      }
+
+      async viewCertificate(certificateId) {
+        window.open(`/certificates/${certificateId}/view`, '_blank');
+      }
+
+      getAuthHeaders(contentType = 'application/json') {
+        const headers = {
+          'Content-Type': contentType
+        };
+        
+        const token = localStorage.getItem('token');
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        return headers;
+      }
+
+      showAlert(message, type = 'info') {
+        const alertsContainer = document.getElementById('alertsContainer');
+        const alertId = 'alert-' + Date.now();
+        
+        const div = document.createElement('div');
+        div.id = alertId;
+        div.className = `alert alert-${type} alert-dismissible fade show`;
+        div.setAttribute('role', 'alert');
+        div.textContent = message;
+        
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-close';
+        btn.setAttribute('data-bs-dismiss', 'alert');
+        btn.setAttribute('aria-label', 'إغلاق');
+        
+        div.appendChild(btn);
+        alertsContainer.innerHTML = '';
+        alertsContainer.appendChild(div);
+        
+        setTimeout(() => {
+          const alertElement = document.getElementById(alertId);
+          if (alertElement) {
+            alertElement.remove();
+          }
+        }, 5000);
+      }
+
+      sanitizeHTML(str) {
+        if (!str) return '';
+        const temp = document.createElement('div');
+        temp.textContent = str;
+        return temp.innerHTML;
+      }
+
+      setupEventListeners() {
+        // إضافة أي event listeners إضافية هنا
+      }
+    }
+
+    // تسجيل الخروج
+    function logout() {
+      localStorage.removeItem('token');
+      sessionStorage.clear();
+      
+      fetch('/api/logout', { 
+        method: 'POST',
+        credentials: 'include'
+      })
+        .then(() => {
+          window.location.href = '/login.html';
+        })
+        .catch(() => {
+          window.location.href = '/login.html';
         });
-    </script>
+    }
+
+    // تهيئة النظام
+    let dashboardSystem;
+    document.addEventListener('DOMContentLoaded', function() {
+      fetch('/api/current-user', { 
+        credentials: 'include'
+      })
+        .then(r => {
+          if (!r.ok) throw new Error('Not logged in');
+          return r.json();
+        })
+        .then(user => {
+          if (user) {
+            dashboardSystem = new StudentDashboardSystem();
+          } else {
+            window.location.href = '/login.html';
+          }
+        })
+        .catch(() => {
+          window.location.href = '/login.html';
+        });
+    });
+  </script>
 </body>
 </html>
