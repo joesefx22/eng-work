@@ -37,6 +37,11 @@ const logger = {
   info: (...msg) => console.log(`[INFO ${new Date().toISOString()}]`, ...msg),
   error: (...msg) => console.error(`[ERROR ${new Date().toISOString()}]`, ...msg),
   warn: (...msg) => console.warn(`[WARN ${new Date().toISOString()}]`, ...msg),
+  debug: (...msg) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[DEBUG ${new Date().toISOString()}]`, ...msg);
+    }
+  }
 };
 
 // ====== إعداد الاتصال بقاعدة البيانات PostgreSQL ======
@@ -51,6 +56,7 @@ const pool = new pg.Pool({
 async function execQuery(query, params = []) {
   const client = await pool.connect();
   try {
+    logger.debug('Executing query:', query.substring(0, 100), '...');
     const result = await client.query(query, params);
     return result.rows;
   } catch (err) {
@@ -63,7 +69,10 @@ async function execQuery(query, params = []) {
 
 // ====== Middleware للتشغيل ======
 app.use(compression());
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -83,12 +92,23 @@ app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ====== حماية من السبام ======
-const limiter = rateLimit({
+const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
   message: 'عدد الطلبات كبير جدًا، حاول لاحقًا',
 });
-app.use(limiter);
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: 'عدد محاولات تسجيل الدخول كبير جداً، حاول بعد 15 دقيقة',
+  skipSuccessfulRequests: true
+});
+
+app.use(generalLimiter);
+app.use('/api/login', authLimiter);
+app.use('/api/register', authLimiter);
+app.use('/api/forgot-password', authLimiter);
 
 // ====== إعداد الجلسات ======
 app.use(
@@ -194,6 +214,12 @@ function validateInput(validationRules) {
   };
 }
 
+// Middleware لإضافة CSRF token لل responses
+app.use((req, res, next) => {
+  res.locals.csrfToken = req.csrfToken();
+  next();
+});
+
 // ====== معالج الأخطاء العالمي ======
 function errorHandler(err, req, res, next) {
   logger.error('Unhandled error:', err);
@@ -222,20 +248,45 @@ function errorHandler(err, req, res, next) {
 app.use(errorHandler);
 
 // ====== دوال الأمان ======
+
+/**
+ * @function generateToken
+ * @description إنشاء توكن عشوائي
+ * @param {number} length - طول التوكن
+ * @returns {string} التوكن المولد
+ */
 function generateToken(length = 32) {
   return crypto.randomBytes(length).toString('hex');
 }
 
+/**
+ * @function maskEmail
+ * @description إخفاء جزء من البريد الإلكتروني
+ * @param {string} email - البريد الإلكتروني
+ * @returns {string} البريد المخفي
+ */
 function maskEmail(email) {
   const [name, domain] = email.split('@');
   return name.slice(0, 2) + '***@' + domain;
 }
 
+/**
+ * @function isStrongPassword
+ * @description التحقق من قوة كلمة المرور
+ * @param {string} password - كلمة المرور
+ * @returns {boolean} إذا كانت قوية
+ */
 function isStrongPassword(password) {
   const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   return strongRegex.test(password);
 }
 
+/**
+ * @function encryptData
+ * @description تشفير البيانات
+ * @param {string} data - البيانات للتشفير
+ * @returns {Object} البيانات المشفرة
+ */
 function encryptData(data) {
   const algorithm = 'aes-256-gcm';
   const key = crypto.scryptSync(process.env.ENCRYPTION_KEY || 'default-key', 'salt', 32);
@@ -252,6 +303,12 @@ function encryptData(data) {
   };
 }
 
+/**
+ * @function decryptData
+ * @description فك تشفير البيانات
+ * @param {Object} encryptedData - البيانات المشفرة
+ * @returns {string} البيانات الأصلية
+ */
 function decryptData(encryptedData) {
   const algorithm = 'aes-256-gcm';
   const key = crypto.scryptSync(process.env.ENCRYPTION_KEY || 'default-key', 'salt', 32);
@@ -266,11 +323,25 @@ function decryptData(encryptedData) {
 }
 
 // ====== دوال مساعدة عامة ======
+
+/**
+ * @function paginate
+ * @description حساب الترقيم
+ * @param {number} page - الصفحة الحالية
+ * @param {number} limit - عدد العناصر في الصفحة
+ * @returns {Object} إعدادات الترقيم
+ */
 function paginate(page = 1, limit = 10) {
   const offset = (page - 1) * limit;
   return { limit, offset };
 }
 
+/**
+ * @function generateSlug
+ * @description إنشاء رابط SEO-friendly
+ * @param {string} text - النص
+ * @returns {string} الرابط
+ */
 function generateSlug(text) {
   return text
     .toString()
@@ -282,6 +353,12 @@ function generateSlug(text) {
     .replace(/-+$/, '');
 }
 
+/**
+ * @function timeAgo
+ * @description حساب الوقت المنقضي
+ * @param {Date} date - التاريخ
+ * @returns {string} الوقت المنقضي
+ */
 function timeAgo(date) {
   const seconds = Math.floor((new Date() - new Date(date)) / 1000);
   const intervals = {
@@ -294,6 +371,12 @@ function timeAgo(date) {
   return 'الآن';
 }
 
+/**
+ * @function formatFileSize
+ * @description تنسيق حجم الملف
+ * @param {number} bytes - الحجم بالبايت
+ * @returns {string} الحجم المنسق
+ */
 function formatFileSize(bytes) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -302,11 +385,23 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+/**
+ * @function generateRandomColor
+ * @description إنشاء لون عشوائي
+ * @returns {string} اللون
+ */
 function generateRandomColor() {
   return '#' + Math.floor(Math.random() * 16777215).toString(16);
 }
 
 // ====== دوال إرسال البريد الإلكتروني ======
+
+/**
+ * @function sendEmailSafe
+ * @description إرسال بريد إلكتروني آمن
+ * @param {Object} options - خيارات البريد
+ * @returns {Promise<boolean>} إذا تم الإرسال
+ */
 async function sendEmailSafe({ to, subject, html, text }) {
   try {
     const transporter = nodemailer.createTransport({
@@ -333,6 +428,14 @@ async function sendEmailSafe({ to, subject, html, text }) {
   }
 }
 
+/**
+ * @function sendBulkEmail
+ * @description إرسال بريد جماعي
+ * @param {Array} users - المستخدمين
+ * @param {string} subject - الموضوع
+ * @param {string} html - المحتوى
+ * @returns {Promise<Array>} نتائج الإرسال
+ */
 async function sendBulkEmail(users, subject, html) {
   const results = [];
   for (const user of users) {
@@ -347,6 +450,11 @@ async function sendBulkEmail(users, subject, html) {
 }
 
 // ====== دوال المستخدمين ======
+
+/**
+ * @function requireLogin
+ * @description التحقق من تسجيل الدخول
+ */
 function requireLogin(req, res, next) {
   if (!req.session.user) {
     return res.status(401).json({ message: 'يجب تسجيل الدخول أولاً' });
@@ -354,27 +462,56 @@ function requireLogin(req, res, next) {
   next();
 }
 
+/**
+ * @function hashValue
+ * @description تشفير قيمة
+ * @param {string} value - القيمة
+ * @returns {Promise<string>} القيمة المشفرة
+ */
 async function hashValue(value) {
   const saltRounds = 12;
   return await bcrypt.hash(value, saltRounds);
 }
 
+/**
+ * @function verifyHash
+ * @description التحقق من التشفير
+ * @param {string} value - القيمة الأصلية
+ * @param {string} hash - التشفير
+ * @returns {Promise<boolean>} إذا كانت متطابقة
+ */
 async function verifyHash(value, hash) {
   return await bcrypt.compare(value, hash);
 }
 
+/**
+ * @function success
+ * @description إرسال رد ناجح
+ */
 function success(res, data = {}, message = 'تم بنجاح') {
   return res.json({ success: true, message, ...data });
 }
 
+/**
+ * @function fail
+ * @description إرسال رد فاشل
+ */
 function fail(res, message = 'حدث خطأ ما', status = 500) {
   return res.status(status).json({ success: false, message });
 }
 
+/**
+ * @function currentUser
+ * @description جلب المستخدم الحالي
+ */
 function currentUser(req) {
   return req.session.user || null;
 }
 
+/**
+ * @function loginUser
+ * @description تسجيل دخول المستخدم
+ */
 function loginUser(req, user) {
   req.session.user = { 
     id: user.id, 
@@ -385,6 +522,10 @@ function loginUser(req, user) {
   req.session.save();
 }
 
+/**
+ * @function logoutUser
+ * @description تسجيل خروج المستخدم
+ */
 function logoutUser(req) {
   req.session.destroy((err) => {
     if (err) {
@@ -393,11 +534,19 @@ function logoutUser(req) {
   });
 }
 
+/**
+ * @function validateEmail
+ * @description التحقق من صحة البريد الإلكتروني
+ */
 function validateEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
 
+/**
+ * @function sanitizeInput
+ * @description تنظيف المدخلات
+ */
 function sanitizeInput(input) {
   if (typeof input !== 'string') return input;
   return input.replace(/[<>&'"]/g, (char) => ({
@@ -409,6 +558,10 @@ function sanitizeInput(input) {
   }[char]));
 }
 
+/**
+ * @function getRandomAvatar
+ * @description الحصول على صورة عشوائية
+ */
 function getRandomAvatar() {
   const avatars = [
     '/img/avatar1.png',
@@ -418,12 +571,21 @@ function getRandomAvatar() {
   return avatars[Math.floor(Math.random() * avatars.length)];
 }
 
+/**
+ * @function getLevelLabel
+ * @description الحصول على تسمية المستوى
+ */
 function getLevelLabel(level) {
   const levels = { beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم' };
   return levels[level] || 'غير محدد';
 }
 
 // ====== دوال تسجيل النشاط ======
+
+/**
+ * @function logActivity
+ * @description تسجيل نشاط المستخدم
+ */
 async function logActivity(userId, action, details = {}) {
   try {
     await execQuery(
@@ -436,18 +598,35 @@ async function logActivity(userId, action, details = {}) {
 }
 
 // ====== دوال الكاش ======
+
+/**
+ * @function getFromCache
+ * @description جلب بيانات من الكاش
+ */
 function getFromCache(key) {
   return cache.get(key);
 }
 
+/**
+ * @function setCache
+ * @description حفظ بيانات في الكاش
+ */
 function setCache(key, data, ttl = 600) {
   return cache.set(key, data, ttl);
 }
 
+/**
+ * @function deleteFromCache
+ * @description حذف بيانات من الكاش
+ */
 function deleteFromCache(key) {
   return cache.del(key);
 }
 
+/**
+ * @function clearCacheByPattern
+ * @description مسح الكاش بنمط معين
+ */
 function clearCacheByPattern(pattern) {
   const keys = cache.keys();
   const matchingKeys = keys.filter(key => key.includes(pattern));
@@ -456,6 +635,11 @@ function clearCacheByPattern(pattern) {
 }
 
 // ====== دوال الكورسات ======
+
+/**
+ * @function calculateCourseDuration
+ * @description حساب مدة الكورس
+ */
 async function calculateCourseDuration(courseId) {
   const result = await execQuery(`
     SELECT COALESCE(SUM(duration),0) AS total_duration 
@@ -465,6 +649,10 @@ async function calculateCourseDuration(courseId) {
   return result[0]?.total_duration || 0;
 }
 
+/**
+ * @function getCourseRating
+ * @description جلب تقييمات الكورس
+ */
 async function getCourseRating(courseId) {
   const cacheKey = `course_rating_${courseId}`;
   const cached = getFromCache(cacheKey);
@@ -483,11 +671,15 @@ async function getCourseRating(courseId) {
   `, [courseId]);
   
   const ratingData = result[0];
-  setCache(cacheKey, ratingData, 300); // 5 دقائق
+  setCache(cacheKey, ratingData, 300);
   
   return ratingData;
 }
 
+/**
+ * @function updateCourseStats
+ * @description تحديث إحصائيات الكورس
+ */
 async function updateCourseStats(courseId) {
   const lessonsCount = await execQuery(
     'SELECT COUNT(*) FROM lessons WHERE course_id = $1', [courseId]
@@ -502,10 +694,13 @@ async function updateCourseStats(courseId) {
     WHERE id = $3
   `, [lessonsCount[0].count, studentsCount[0].count, courseId]);
   
-  // مسح الكاش
   clearCacheByPattern(`course_${courseId}`);
 }
 
+/**
+ * @function getMostPopularCourses
+ * @description جلب الكورسات الأكثر شعبية
+ */
 async function getMostPopularCourses(limit = 5) {
   const cacheKey = `popular_courses_${limit}`;
   const cached = getFromCache(cacheKey);
@@ -524,11 +719,16 @@ async function getMostPopularCourses(limit = 5) {
     LIMIT $1
   `, [limit]);
 
-  setCache(cacheKey, courses, 600); // 10 دقائق
+  setCache(cacheKey, courses, 600);
   return courses;
 }
 
 // ====== دوال التقارير ======
+
+/**
+ * @function getUserActivityReport
+ * @description جلب تقرير نشاط المستخدم
+ */
 async function getUserActivityReport(userId) {
   return await execQuery(`
     SELECT action, COUNT(*) as count, 
@@ -540,6 +740,10 @@ async function getUserActivityReport(userId) {
   `, [userId]);
 }
 
+/**
+ * @function getRevenueTrend
+ * @description جلب اتجاه الإيرادات
+ */
 async function getRevenueTrend(days = 30) {
   return await execQuery(`
     SELECT DATE(created_at) as date, 
@@ -553,6 +757,27 @@ async function getRevenueTrend(days = 30) {
   `);
 }
 
+/**
+ * @function getRevenueReportByMonth
+ * @description جلب تقرير الإيرادات الشهري
+ */
+async function getRevenueReportByMonth(year = new Date().getFullYear()) {
+  return await execQuery(`
+    SELECT 
+      EXTRACT(MONTH FROM created_at) as month,
+      COUNT(*) as transactions,
+      SUM(amount) as revenue
+    FROM payment_sessions 
+    WHERE status = 'completed' AND EXTRACT(YEAR FROM created_at) = $1
+    GROUP BY EXTRACT(MONTH FROM created_at)
+    ORDER BY month
+  `, [year]);
+}
+
+/**
+ * @function getSystemStats
+ * @description جلب إحصائيات النظام
+ */
 async function getSystemStats() {
   const cacheKey = 'system_stats';
   const cached = getFromCache(cacheKey);
@@ -578,11 +803,16 @@ async function getSystemStats() {
     activeUsers: parseInt(activeUsers[0].count)
   };
 
-  setCache(cacheKey, stats, 300); // 5 دقائق
+  setCache(cacheKey, stats, 300);
   return stats;
 }
 
 // ====== دوال الإشعارات ======
+
+/**
+ * @function createNotification
+ * @description إنشاء إشعار جديد
+ */
 async function createNotification(userId, title, message, type = 'info') {
   const notificationId = uuidv4();
   await execQuery(
@@ -591,12 +821,15 @@ async function createNotification(userId, title, message, type = 'info') {
     [notificationId, userId, sanitizeInput(title), sanitizeInput(message), type, false, new Date()]
   );
   
-  // مسح كاش الإشعارات
   deleteFromCache(`notifications_${userId}`);
   
   return notificationId;
 }
 
+/**
+ * @function markNotificationAsRead
+ * @description تسجيل الإشعار كمقروء
+ */
 async function markNotificationAsRead(notificationId) {
   await execQuery(
     'UPDATE notifications SET is_read = true, read_at = NOW() WHERE id = $1',
@@ -604,6 +837,10 @@ async function markNotificationAsRead(notificationId) {
   );
 }
 
+/**
+ * @function getUnreadNotifications
+ * @description جلب الإشعارات غير المقروءة
+ */
 async function getUnreadNotifications(userId) {
   const cacheKey = `notifications_${userId}`;
   const cached = getFromCache(cacheKey);
@@ -617,10 +854,14 @@ async function getUnreadNotifications(userId) {
     [userId]
   );
 
-  setCache(cacheKey, notifications, 60); // 1 دقيقة
+  setCache(cacheKey, notifications, 60);
   return notifications;
 }
 
+/**
+ * @function markAllNotificationsAsRead
+ * @description تسجيل كل الإشعارات كمقروءة
+ */
 async function markAllNotificationsAsRead(userId) {
   await execQuery(
     'UPDATE notifications SET is_read = true, read_at = NOW() WHERE user_id = $1 AND is_read = false',
@@ -630,6 +871,11 @@ async function markAllNotificationsAsRead(userId) {
 }
 
 // ====== دوال الإدارة ======
+
+/**
+ * @function getAllUsers
+ * @description جلب جميع المستخدمين
+ */
 async function getAllUsers(limit = 50, page = 1) {
   const { offset } = paginate(page, limit);
   return await execQuery(`
@@ -642,18 +888,30 @@ async function getAllUsers(limit = 50, page = 1) {
   `, [limit, offset]);
 }
 
+/**
+ * @function banUser
+ * @description حظر مستخدم
+ */
 async function banUser(userId) {
   await execQuery('UPDATE users SET banned = true, updated_at = NOW() WHERE id = $1', [userId]);
   await logActivity(userId, 'USER_BANNED');
   clearCacheByPattern('users');
 }
 
+/**
+ * @function unbanUser
+ * @description إلغاء حظر مستخدم
+ */
 async function unbanUser(userId) {
   await execQuery('UPDATE users SET banned = false, updated_at = NOW() WHERE id = $1', [userId]);
   await logActivity(userId, 'USER_UNBANNED');
   clearCacheByPattern('users');
 }
 
+/**
+ * @function getAllPayments
+ * @description جلب جميع المدفوعات
+ */
 async function getAllPayments(limit = 50, page = 1) {
   const { offset } = paginate(page, limit);
   return await execQuery(`
@@ -666,6 +924,10 @@ async function getAllPayments(limit = 50, page = 1) {
   `, [limit, offset]);
 }
 
+/**
+ * @function deleteCourse
+ * @description حذف كورس
+ */
 async function deleteCourse(courseId) {
   await execQuery('DELETE FROM courses WHERE id = $1', [courseId]);
   clearCacheByPattern('course');
@@ -673,6 +935,11 @@ async function deleteCourse(courseId) {
 }
 
 // ====== دوال الصيانة ======
+
+/**
+ * @function deleteInactiveUsers
+ * @description حذف المستخدمين غير النشطين
+ */
 async function deleteInactiveUsers(days = 180) {
   const result = await execQuery(`
     DELETE FROM users WHERE id IN (
@@ -686,6 +953,10 @@ async function deleteInactiveUsers(days = 180) {
   return result.rowCount;
 }
 
+/**
+ * @function archiveOldLogs
+ * @description أرشيف السجلات القديمة
+ */
 async function archiveOldLogs(days = 90) {
   // أرشيف سجلات النشاط
   await execQuery(`
@@ -712,6 +983,10 @@ async function archiveOldLogs(days = 90) {
   return deleteResult.rowCount;
 }
 
+/**
+ * @function cleanupExpiredTokens
+ * @description تنظيف التوكنز المنتهية
+ */
 async function cleanupExpiredTokens() {
   const result = await execQuery(`
     UPDATE users 
@@ -721,7 +996,24 @@ async function cleanupExpiredTokens() {
   return result.rowCount;
 }
 
+/**
+ * @function cleanupOldSessions
+ * @description تنظيف الجلسات القديمة
+ */
+async function cleanupOldSessions(days = 30) {
+  const result = await execQuery(
+    'DELETE FROM sessions WHERE created_at < NOW() - INTERVAL \'$1 days\'',
+    [days]
+  );
+  return result.rowCount;
+}
+
 // ====== دوال التصدير ======
+
+/**
+ * @function exportUserData
+ * @description تصدير بيانات المستخدم
+ */
 async function exportUserData(userId) {
   const userData = await execQuery('SELECT * FROM users WHERE id = $1', [userId]);
   const enrollments = await execQuery(`
@@ -750,6 +1042,10 @@ async function exportUserData(userId) {
   };
 }
 
+/**
+ * @function exportCourseData
+ * @description تصدير بيانات الكورس
+ */
 async function exportCourseData(courseId) {
   const course = await execQuery('SELECT * FROM courses WHERE id = $1', [courseId]);
   const lessons = await execQuery('SELECT * FROM lessons WHERE course_id = $1 ORDER BY order_index', [courseId]);
@@ -778,6 +1074,24 @@ async function exportCourseData(courseId) {
 
 // ====== دالة ثابتة لتوليد رابط التطبيق ======
 const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
+
+// ========= Routes الأساسية =========
+
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'السيرفر يعمل بشكل طبيعي',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// CSRF Token
+app.get('/api/csrf-token', (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
 
 // ========= نظام الكورسات والدروس =========
 
@@ -848,7 +1162,7 @@ app.get('/api/courses', async (req, res) => {
       }
     }
 
-    setCache(cacheKey, courses, 300); // 5 دقائق
+    setCache(cacheKey, courses, 300);
     success(res, { courses, fromCache: false });
 
   } catch (error) {
@@ -903,7 +1217,6 @@ app.get('/api/courses/:id', async (req, res) => {
       course.progress = enrollment.length > 0 ? enrollment[0].progress : 0;
       course.progress_data = enrollment.length > 0 ? enrollment[0].progress_data : {};
       
-      // تسجيل النشاط
       await logActivity(req.session.user.id, 'VIEW_COURSE', { courseId });
     }
 
@@ -917,7 +1230,7 @@ app.get('/api/courses/:id', async (req, res) => {
       lessons: lessons
     };
 
-    setCache(cacheKey, responseData, 600); // 10 دقائق
+    setCache(cacheKey, responseData, 600);
     success(res, { ...responseData, fromCache: false });
 
   } catch (error) {
@@ -1114,6 +1427,475 @@ app.post('/api/progress',
   }
 );
 
+// الحصول على كورسات المستخدم
+app.get('/api/user/courses', requireLogin, async (req, res) => {
+  try {
+    const enrollments = await execQuery(`
+      SELECT e.*, c.title, c.description, c.image, c.instructor_id, u.username as instructor_name
+      FROM enrollments e
+      JOIN courses c ON e.course_id = c.id
+      LEFT JOIN users u ON c.instructor_id = u.id
+      WHERE e.user_id = $1
+      ORDER BY e.updated_at DESC
+    `, [req.session.user.id]);
+
+    success(res, { courses: enrollments });
+  } catch (error) {
+    logger.error('Get user courses error', error);
+    fail(res, 'حدث خطأ في جلب كورساتك');
+  }
+});
+
+// إنشاء كورس جديد (للمعلمين)
+app.post('/api/courses', 
+  requireLogin,
+  checkRole(['teacher', 'admin']),
+  validateInput([
+    body('title').isLength({ min: 5 }).withMessage('العنوان يجب أن يكون 5 أحرف على الأقل'),
+    body('description').isLength({ min: 10 }).withMessage('الوصف يجب أن يكون 10 أحرف على الأقل'),
+    body('category').notEmpty().withMessage('التصنيف مطلوب')
+  ]),
+  async (req, res) => {
+    try {
+      const { title, description, category, level, price, is_free, requirements, objectives } = req.body;
+      
+      const courseId = uuidv4();
+      
+      await execQuery(
+        `INSERT INTO courses (id, title, description, category, level, price, is_free, 
+         requirements, objectives, instructor_id, published, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        [courseId, sanitizeInput(title), sanitizeInput(description), category, level, 
+         price || 0, is_free || false,
+         JSON.stringify(requirements || []), JSON.stringify(objectives || []),
+         req.session.user.id, false, new Date()]
+      );
+
+      await logActivity(req.session.user.id, 'CREATE_COURSE', { courseId, title });
+
+      success(res, { courseId: courseId }, 'تم إنشاء الكورس بنجاح');
+
+    } catch (error) {
+      logger.error('Create course error', error);
+      fail(res, 'حدث خطأ أثناء إنشاء الكورس');
+    }
+  }
+);
+
+// ========= نظام المستخدمين =========
+
+// تسجيل الدخول
+app.post('/api/login', 
+  validateInput([
+    body('email').isEmail().withMessage('بريد إلكتروني غير صالح'),
+    body('password').isLength({ min: 1 }).withMessage('كلمة المرور مطلوبة')
+  ]),
+  async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      const users = await execQuery(
+        'SELECT * FROM users WHERE email = $1',
+        [email.toLowerCase()]
+      );
+
+      if (users.length === 0) {
+        return fail(res, 'البريد الإلكتروني أو كلمة المرور غير صحيحة', 401);
+      }
+
+      const user = users[0];
+      
+      // التحقق من كلمة المرور باستخدام bcrypt
+      const isPasswordValid = await verifyHash(password, user.password_hash);
+      if (!isPasswordValid) {
+        return fail(res, 'البريد الإلكتروني أو كلمة المرور غير صحيحة', 401);
+      }
+
+      // التحقق من الحظر
+      if (user.banned) {
+        return fail(res, 'تم حظر حسابك', 403);
+      }
+
+      loginUser(req, user);
+
+      await logActivity(user.id, 'LOGIN', { ip: req.ip });
+
+      success(res, {
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          role: user.role
+        }
+      }, 'تم تسجيل الدخول بنجاح');
+
+    } catch (error) {
+      logger.error('Login error', error);
+      fail(res, 'حدث خطأ أثناء تسجيل الدخول');
+    }
+  }
+);
+
+// تسجيل الخروج
+app.post('/api/logout', requireLogin, (req, res) => {
+  logActivity(req.session.user.id, 'LOGOUT');
+  logoutUser(req);
+  success(res, {}, 'تم تسجيل الخروج بنجاح');
+});
+
+// إنشاء حساب جديد
+app.post('/api/register', 
+  validateInput([
+    body('username').isLength({ min: 3 }).withMessage('اسم المستخدم يجب أن يكون 3 أحرف على الأقل'),
+    body('email').isEmail().withMessage('بريد إلكتروني غير صالح'),
+    body('password').isLength({ min: 6 }).withMessage('كلمة المرور يجب أن تكون 6 أحرف على الأقل')
+  ]),
+  async (req, res) => {
+    try {
+      const { username, email, password, role = 'student' } = req.body;
+
+      // التحقق من قوة كلمة المرور
+      if (!isStrongPassword(password)) {
+        return fail(res, 'كلمة المرور يجب أن تحتوي على حروف كبيرة وصغيرة وأرقام ورموز', 400);
+      }
+
+      // التحقق من عدم وجود المستخدم مسبقاً
+      const existingUsers = await execQuery(
+        'SELECT id FROM users WHERE email = $1 OR username = $2',
+        [email.toLowerCase(), sanitizeInput(username)]
+      );
+
+      if (existingUsers.length > 0) {
+        return fail(res, 'البريد الإلكتروني أو اسم المستخدم موجود مسبقاً', 400);
+      }
+
+      const userId = uuidv4();
+      const hashedPassword = await hashValue(password);
+      
+      await execQuery(
+        `INSERT INTO users (id, username, email, password_hash, role, avatar_url, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [userId, sanitizeInput(username), email.toLowerCase(), hashedPassword, role, getRandomAvatar(), new Date()]
+      );
+
+      // تسجيل الدخول تلقائياً
+      const newUser = { id: userId, email, username, role };
+      loginUser(req, newUser);
+
+      // إرسال بريد ترحيبي
+      await sendEmailSafe({
+        to: email,
+        subject: 'مرحباً بك في Elmahdy English!',
+        html: `
+          <div style="font-family: 'Cairo', Arial, sans-serif; direction: rtl; padding: 20px;">
+            <h2 style="color: #0056d6;">أهلاً وسهلاً بك في Elmahdy English! 🎉</h2>
+            <p><strong>اسم المستخدم:</strong> ${username}</p>
+            <p>نشكرك على انضمامك إلى منصتنا التعليمية.</p>
+            <p>يمكنك الآن استكشاف الكورسات والبدء في رحلتك التعليمية.</p>
+            <a href="${APP_URL}" style="background: #0056d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+              ابدأ التعلم الآن
+            </a>
+          </div>
+        `
+      });
+
+      await logActivity(userId, 'REGISTER', { username, email });
+
+      success(res, {
+        user: newUser
+      }, 'تم إنشاء الحساب بنجاح');
+
+    } catch (error) {
+      logger.error('Registration error', error);
+      fail(res, 'حدث خطأ أثناء إنشاء الحساب');
+    }
+  }
+);
+
+// الحصول على بيانات المستخدم الحالي
+app.get('/api/user/me', requireLogin, (req, res) => {
+  success(res, { user: req.session.user });
+});
+
+// تحديث الملف الشخصي
+app.post('/api/user/update-profile', 
+  requireLogin,
+  validateInput([
+    body('username').isLength({ min: 3 }).withMessage('اسم المستخدم يجب أن يكون 3 أحرف على الأقل')
+  ]),
+  async (req, res) => {
+    try {
+      const { username, bio, avatar_url } = req.body;
+      
+      await execQuery(
+        'UPDATE users SET username = $1, bio = $2, avatar_url = $3, updated_at = NOW() WHERE id = $4',
+        [sanitizeInput(username), sanitizeInput(bio), avatar_url, req.session.user.id]
+      );
+      
+      // تحديث الجلسة
+      req.session.user.username = username;
+      req.session.save();
+
+      await logActivity(req.session.user.id, 'UPDATE_PROFILE', { username });
+
+      success(res, {}, 'تم تحديث الملف الشخصي');
+    } catch (error) {
+      logger.error('Update profile error', error);
+      fail(res, 'حدث خطأ أثناء تحديث الملف الشخصي');
+    }
+  }
+);
+
+// تغيير كلمة المرور
+app.post('/api/user/change-password', 
+  requireLogin,
+  validateInput([
+    body('oldPassword').notEmpty().withMessage('كلمة المرور القديمة مطلوبة'),
+    body('newPassword').isLength({ min: 6 }).withMessage('كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل')
+  ]),
+  async (req, res) => {
+    try {
+      const { oldPassword, newPassword } = req.body;
+
+      if (!isStrongPassword(newPassword)) {
+        return fail(res, 'كلمة المرور الجديدة يجب أن تحتوي على حروف كبيرة وصغيرة وأرقام ورموز', 400);
+      }
+
+      const user = await execQuery('SELECT * FROM users WHERE id = $1', [req.session.user.id]);
+      
+      const isOldPasswordValid = await verifyHash(oldPassword, user[0].password_hash);
+      if (!isOldPasswordValid) {
+        return fail(res, 'كلمة المرور القديمة غير صحيحة', 401);
+      }
+
+      const newHashedPassword = await hashValue(newPassword);
+      
+      await execQuery(
+        'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+        [newHashedPassword, req.session.user.id]
+      );
+
+      await logActivity(req.session.user.id, 'CHANGE_PASSWORD');
+
+      success(res, {}, 'تم تغيير كلمة المرور بنجاح');
+    } catch (error) {
+      logger.error('Change password error', error);
+      fail(res, 'حدث خطأ أثناء تغيير كلمة المرور');
+    }
+  }
+);
+
+// نسيان كلمة المرور
+app.post('/api/user/forgot-password', 
+  validateInput([
+    body('email').isEmail().withMessage('بريد إلكتروني غير صالح')
+  ]),
+  async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      const user = await execQuery('SELECT * FROM users WHERE email = $1', [email]);
+      if (!user.length) {
+        return fail(res, 'المستخدم غير موجود', 404);
+      }
+
+      const token = generateToken(32);
+      const expire = new Date(Date.now() + 15 * 60 * 1000); // 15 دقيقة
+
+      await execQuery(
+        'UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3',
+        [token, expire, user[0].id]
+      );
+
+      await sendEmailSafe({
+        to: email,
+        subject: 'إعادة تعيين كلمة المرور',
+        html: `
+          <div style="font-family: 'Cairo', Arial, sans-serif; direction: rtl; padding: 20px;">
+            <h2 style="color: #0056d6;">إعادة تعيين كلمة المرور</h2>
+            <p>لقد طلبت إعادة تعيين كلمة المرور لحسابك.</p>
+            <p>اضغط على الرابط التالي لإعادة تعيين كلمة المرور:</p>
+            <a href="${APP_URL}/reset-password?token=${token}" style="background: #0056d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+              إعادة تعيين كلمة المرور
+            </a>
+            <p style="color: #666; margin-top: 20px;">هذا الرابط صالح لمدة 15 دقيقة فقط.</p>
+          </div>
+        `
+      });
+
+      success(res, {}, 'تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني');
+    } catch (error) {
+      logger.error('Forgot password error', error);
+      fail(res, 'حدث خطأ أثناء إرسال رابط إعادة التعيين');
+    }
+  }
+);
+
+// إعادة تعيين كلمة المرور
+app.post('/api/user/reset-password', 
+  validateInput([
+    body('token').notEmpty().withMessage('التوكن مطلوب'),
+    body('newPassword').isLength({ min: 6 }).withMessage('كلمة المرور يجب أن تكون 6 أحرف على الأقل')
+  ]),
+  async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!isStrongPassword(newPassword)) {
+        return fail(res, 'كلمة المرور يجب أن تحتوي على حروف كبيرة وصغيرة وأرقام ورموز', 400);
+      }
+
+      const users = await execQuery(
+        'SELECT * FROM users WHERE reset_token = $1 AND reset_expires > NOW()',
+        [token]
+      );
+      
+      if (!users.length) {
+        return fail(res, 'الرابط غير صالح أو منتهي', 400);
+      }
+
+      const newHashedPassword = await hashValue(newPassword);
+      
+      await execQuery(
+        'UPDATE users SET password_hash = $1, reset_token = NULL, reset_expires = NULL WHERE id = $2',
+        [newHashedPassword, users[0].id]
+      );
+
+      await logActivity(users[0].id, 'RESET_PASSWORD');
+
+      success(res, {}, 'تم تغيير كلمة المرور بنجاح');
+    } catch (error) {
+      logger.error('Reset password error', error);
+      fail(res, 'حدث خطأ أثناء إعادة تعيين كلمة المرور');
+    }
+  }
+);
+
+// ========= نظام المدفوعات =========
+
+// إنشاء جلسة دفع
+app.post('/api/payment/create-session', 
+  requireLogin,
+  validateInput([
+    body('paymentSessionId').isUUID().withMessage('معرف جلسة الدفع غير صالح')
+  ]),
+  async (req, res) => {
+    try {
+      const { courseId, paymentSessionId } = req.body;
+
+      // التحقق من جلسة الدفع
+      const paymentSession = await execQuery(
+        'SELECT * FROM payment_sessions WHERE id = $1 AND user_id = $2 AND status = $3',
+        [paymentSessionId, req.session.user.id, 'pending']
+      );
+
+      if (paymentSession.length === 0) {
+        return fail(res, 'جلسة الدفع غير موجودة أو منتهية', 404);
+      }
+
+      const session = paymentSession[0];
+
+      // محاكاة الدفع الناجح
+      const enrollmentId = uuidv4();
+      
+      await execQuery(
+        `INSERT INTO enrollments (id, user_id, course_id, enrolled_at, progress, progress_data)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [enrollmentId, req.session.user.id, session.course_id, new Date(), 0, JSON.stringify({})]
+      );
+
+      // تحديث حالة الدفع
+      await execQuery(
+        'UPDATE payment_sessions SET status = $1, completed_at = $2 WHERE id = $3',
+        ['completed', new Date(), paymentSessionId]
+      );
+
+      // تحديث إحصائيات الكورس
+      await updateCourseStats(session.course_id);
+
+      await logActivity(req.session.user.id, 'PAYMENT_COMPLETED', { 
+        courseId: session.course_id, amount: session.amount 
+      });
+
+      success(res, {
+        enrollmentId: enrollmentId,
+        redirectUrl: `/course/${session.course_id}`
+      }, 'تم الدفع والتسجيل في الكورس بنجاح');
+
+    } catch (error) {
+      logger.error('Payment error', error);
+      fail(res, 'حدث خطأ أثناء عملية الدفع');
+    }
+  }
+);
+
+// ========= الإحصائيات والتقارير =========
+
+// إحصائيات النظام
+app.get('/api/stats', requireLogin, checkRole(['admin']), async (req, res) => {
+  try {
+    const stats = await getSystemStats();
+    success(res, { stats });
+  } catch (error) {
+    logger.error('Get stats error', error);
+    fail(res, 'حدث خطأ في جلب الإحصائيات');
+  }
+});
+
+// إحصائيات متقدمة
+app.get('/api/admin/stats/advanced', requireLogin, checkRole(['admin']), async (req, res) => {
+  try {
+    const revenueByMonth = await getRevenueReportByMonth();
+    const popularCourses = await getMostPopularCourses(10);
+    const systemStats = await getSystemStats();
+    const revenueTrend = await getRevenueTrend(30);
+    
+    success(res, {
+      revenueByMonth,
+      popularCourses,
+      systemStats,
+      revenueTrend
+    });
+  } catch (error) {
+    logger.error('Get advanced stats error', error);
+    fail(res, 'حدث خطأ في جلب الإحصائيات المتقدمة');
+  }
+});
+
+// إحصائيات المدرب
+app.get('/api/instructor/stats', requireLogin, checkRole(['teacher']), async (req, res) => {
+  try {
+    const courses = await execQuery(
+      'SELECT * FROM courses WHERE instructor_id = $1',
+      [req.session.user.id]
+    );
+    
+    const totalStudents = await execQuery(`
+      SELECT COUNT(DISTINCT e.user_id) as count 
+      FROM enrollments e
+      JOIN courses c ON e.course_id = c.id
+      WHERE c.instructor_id = $1
+    `, [req.session.user.id]);
+
+    const revenue = await execQuery(`
+      SELECT COALESCE(SUM(ps.amount), 0) as total 
+      FROM payment_sessions ps
+      JOIN courses c ON ps.course_id = c.id
+      WHERE c.instructor_id = $1 AND ps.status = 'completed'
+    `, [req.session.user.id]);
+
+    success(res, {
+      totalCourses: courses.length,
+      totalStudents: parseInt(totalStudents[0].count),
+      totalRevenue: parseFloat(revenue[0].total),
+      courses: courses
+    });
+  } catch (error) {
+    logger.error('Get instructor stats error', error);
+    fail(res, 'حدث خطأ في جلب إحصائيات المدرب');
+  }
+});
+
 // ========= دوال جديدة مطلوبة =========
 
 // الحصول على الكورسات الشعبية
@@ -1162,7 +1944,30 @@ app.post('/api/user/notifications/:id/read', requireLogin, async (req, res) => {
   }
 });
 
+// تسجيل كل الإشعارات كمقروءة
+app.post('/api/user/notifications/read-all', requireLogin, async (req, res) => {
+  try {
+    await markAllNotificationsAsRead(req.session.user.id);
+    success(res, {}, 'تم تسجيل جميع الإشعارات كمقروءة');
+  } catch (error) {
+    logger.error('Mark all notifications as read error', error);
+    fail(res, 'حدث خطأ في تسجيل الإشعارات');
+  }
+});
+
 // ========= دوال الإدارة =========
+
+// الحصول على جميع المستخدمين
+app.get('/api/admin/users', requireLogin, checkRole(['admin']), async (req, res) => {
+  try {
+    const { page = 1, limit = 50 } = req.query;
+    const users = await getAllUsers(parseInt(limit), parseInt(page));
+    success(res, { users });
+  } catch (error) {
+    logger.error('Get all users error', error);
+    fail(res, 'حدث خطأ في جلب المستخدمين');
+  }
+});
 
 // حظر مستخدم
 app.post('/api/admin/users/:id/ban', requireLogin, checkRole(['admin']), async (req, res) => {
@@ -1212,31 +2017,133 @@ app.delete('/api/admin/courses/:id', requireLogin, checkRole(['admin']), async (
   }
 });
 
+// تبديل حالة نشر الكورس
+app.post('/api/courses/:id/toggle-publish', requireLogin, async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    
+    // التحقق من الملكية أو صلاحيات المدير
+    const course = await execQuery('SELECT * FROM courses WHERE id = $1', [courseId]);
+    if (course.length === 0) {
+      return fail(res, 'الكورس غير موجود', 404);
+    }
+
+    if (req.session.user.role !== 'admin' && course[0].instructor_id !== req.session.user.id) {
+      return fail(res, 'غير مصرح لك', 403);
+    }
+
+    const newStatus = !course[0].published;
+    await execQuery(
+      'UPDATE courses SET published = $1, updated_at = NOW() WHERE id = $2',
+      [newStatus, courseId]
+    );
+    
+    await logActivity(req.session.user.id, 'TOGGLE_COURSE_PUBLISH', { courseId, newStatus });
+
+    success(res, { published: newStatus }, `تم ${newStatus ? 'نشر' : 'إلغاء نشر'} الكورس بنجاح`);
+  } catch (error) {
+    logger.error('Toggle course publish error', error);
+    fail(res, 'حدث خطأ أثناء تغيير حالة الكورس');
+  }
+});
+
+// إضافة تقييم للكورس
+app.post('/api/courses/:id/review', 
+  requireLogin,
+  validateInput([
+    body('rating').isInt({ min: 1, max: 5 }).withMessage('التقييم يجب أن يكون بين 1 و 5'),
+    body('comment').optional().isLength({ max: 1000 }).withMessage('التعليق يجب أن يكون أقل من 1000 حرف')
+  ]),
+  async (req, res) => {
+    try {
+      const courseId = req.params.id;
+      const { rating, comment } = req.body;
+
+      // التحقق من تسجيل المستخدم في الكورس
+      const enrollment = await execQuery(
+        'SELECT id FROM enrollments WHERE user_id = $1 AND course_id = $2',
+        [req.session.user.id, courseId]
+      );
+
+      if (enrollment.length === 0) {
+        return fail(res, 'يجب أن تكون مسجلاً في الكورس لإضافة تقييم', 400);
+      }
+
+      const reviewId = uuidv4();
+      await execQuery(
+        `INSERT INTO course_reviews (id, user_id, course_id, rating, comment, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [reviewId, req.session.user.id, courseId, rating, sanitizeInput(comment || ''), new Date()]
+      );
+      
+      await logActivity(req.session.user.id, 'ADD_REVIEW', { courseId, rating });
+
+      success(res, { reviewId }, 'تم إضافة التقييم بنجاح');
+    } catch (error) {
+      logger.error('Add review error', error);
+      fail(res, 'حدث خطأ أثناء إضافة التقييم');
+    }
+  }
+);
+
 // ========= دوال الصيانة =========
 
 // تنظيف المستخدمين غير النشطين
-app.post('/api/admin/maintenance/cleanup-users', requireLogin, checkRole(['admin']), async (req, res) => {
-  try {
-    const { days = 180 } = req.body;
-    const deletedCount = await deleteInactiveUsers(parseInt(days));
-    success(res, { deletedCount }, `تم حذف ${deletedCount} مستخدم غير نشط`);
-  } catch (error) {
-    logger.error('Cleanup users error', error);
-    fail(res, 'حدث خطأ في تنظيف المستخدمين');
+app.post('/api/admin/maintenance/cleanup-users', 
+  requireLogin, 
+  checkRole(['admin']),
+  validateInput([
+    body('days').optional().isInt({ min: 30 }).withMessage('عدد الأيام يجب أن يكون 30 على الأقل')
+  ]),
+  async (req, res) => {
+    try {
+      const { days = 180 } = req.body;
+      const deletedCount = await deleteInactiveUsers(parseInt(days));
+      success(res, { deletedCount }, `تم حذف ${deletedCount} مستخدم غير نشط`);
+    } catch (error) {
+      logger.error('Cleanup users error', error);
+      fail(res, 'حدث خطأ في تنظيف المستخدمين');
+    }
   }
-});
+);
 
 // أرشيف السجلات القديمة
-app.post('/api/admin/maintenance/archive-logs', requireLogin, checkRole(['admin']), async (req, res) => {
-  try {
-    const { days = 90 } = req.body;
-    const archivedCount = await archiveOldLogs(parseInt(days));
-    success(res, { archivedCount }, `تم أرشيف ${archivedCount} سجل`);
-  } catch (error) {
-    logger.error('Archive logs error', error);
-    fail(res, 'حدث خطأ في أرشيف السجلات');
+app.post('/api/admin/maintenance/archive-logs', 
+  requireLogin, 
+  checkRole(['admin']),
+  validateInput([
+    body('days').optional().isInt({ min: 7 }).withMessage('عدد الأيام يجب أن يكون 7 على الأقل')
+  ]),
+  async (req, res) => {
+    try {
+      const { days = 90 } = req.body;
+      const archivedCount = await archiveOldLogs(parseInt(days));
+      success(res, { archivedCount }, `تم أرشيف ${archivedCount} سجل`);
+    } catch (error) {
+      logger.error('Archive logs error', error);
+      fail(res, 'حدث خطأ في أرشيف السجلات');
+    }
   }
-});
+);
+
+// تنظيف الجلسات القديمة
+app.post('/api/admin/maintenance/cleanup-sessions', 
+  requireLogin, 
+  checkRole(['admin']),
+  validateInput([
+    body('days').optional().isInt({ min: 1 }).withMessage('عدد الأيام يجب أن يكون 1 على الأقل')
+  ]),
+  async (req, res) => {
+    try {
+      const { days = 30 } = req.body;
+      const cleanedCount = await cleanupOldSessions(parseInt(days));
+      success(res, { cleanedCount }, `تم تنظيف ${cleanedCount} جلسة`);
+    } catch (error) {
+      logger.error('Cleanup sessions error', error);
+      fail(res, 'حدث خطأ في تنظيف الجلسات');
+    }
+  }
+);
 
 // ========= دوال التصدير =========
 
@@ -1251,6 +2158,45 @@ app.get('/api/user/export-data', requireLogin, async (req, res) => {
     logger.error('Export user data error', error);
     fail(res, 'حدث خطأ في تصدير البيانات');
   }
+});
+
+// تصدير بيانات الكورس
+app.get('/api/courses/:id/export-data', 
+  requireLogin, 
+  checkRole(['teacher', 'admin']), 
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // التحقق من الملكية
+      const course = await execQuery('SELECT * FROM courses WHERE id = $1', [id]);
+      if (course.length === 0) {
+        return fail(res, 'الكورس غير موجود', 404);
+      }
+
+      if (req.session.user.role !== 'admin' && course[0].instructor_id !== req.session.user.id) {
+        return fail(res, 'غير مصرح لك', 403);
+      }
+
+      const courseData = await exportCourseData(id);
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename=course-data-${id}.json`);
+      res.json(courseData);
+    } catch (error) {
+      logger.error('Export course data error', error);
+      fail(res, 'حدث خطأ في تصدير بيانات الكورس');
+    }
+  }
+);
+
+// ========= معالج للروابط غير موجودة =========
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'الرابط غير موجود',
+    path: req.originalUrl,
+    suggestion: 'تحقق من الرابط أو راجع documentation'
+  });
 });
 
 // ========= إنشاء الجداول في قاعدة البيانات =========
@@ -1447,6 +2393,16 @@ async function createEducationTables() {
       )
     `);
 
+    // جدول الجلسات (لـ express-session)
+    await execQuery(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        sid VARCHAR(255) PRIMARY KEY,
+        sess JSON NOT NULL,
+        expire TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     logger.info('✅ All tables created successfully');
   } catch (error) {
     logger.error('❌ Error creating tables', error);
@@ -1465,21 +2421,21 @@ async function seedSampleData() {
       await execQuery(
         `INSERT INTO users (id, username, email, password_hash, role, bio) 
          VALUES ($1, $2, $3, $4, $5, $6)`,
-        [teacherId, 'teacher_ahmed', 'teacher@elmahdy-english.com', await hashValue('password123'), 'teacher', 'مدرس لغة إنجليزية محترف مع 10 سنوات خبرة']
+        [teacherId, 'teacher_ahmed', 'teacher@elmahdy-english.com', await hashValue('Password123!'), 'teacher', 'مدرس لغة إنجليزية محترف مع 10 سنوات خبرة']
       );
 
       const adminId = uuidv4();
       await execQuery(
         `INSERT INTO users (id, username, email, password_hash, role) 
          VALUES ($1, $2, $3, $4, $5)`,
-        [adminId, 'admin', 'admin@elmahdy-english.com', await hashValue('admin123'), 'admin']
+        [adminId, 'admin', 'admin@elmahdy-english.com', await hashValue('Admin123!'), 'admin']
       );
 
       const studentId = uuidv4();
       await execQuery(
         `INSERT INTO users (id, username, email, password_hash, role) 
          VALUES ($1, $2, $3, $4, $5)`,
-        [studentId, 'student_mohamed', 'student@elmahdy-english.com', await hashValue('password123'), 'student']
+        [studentId, 'student_mohamed', 'student@elmahdy-english.com', await hashValue('Password123!'), 'student']
       );
 
       // إضافة كورسات تجريبية
@@ -1546,7 +2502,7 @@ function startMaintenanceTasks() {
   // أرشيف السجلات القديمة يومياً
   setInterval(async () => {
     try {
-      const archived = await archiveOldLogs(30); // 30 يوم
+      const archived = await archiveOldLogs(30);
       if (archived > 0) {
         logger.info(`📦 Archived ${archived} old logs`);
       }
@@ -1558,7 +2514,7 @@ function startMaintenanceTasks() {
   // حذف المستخدمين غير النشطين أسبوعياً
   setInterval(async () => {
     try {
-      const deleted = await deleteInactiveUsers(180); // 6 أشهر
+      const deleted = await deleteInactiveUsers(180);
       if (deleted > 0) {
         logger.info(`🗑️ Deleted ${deleted} inactive users`);
       }
@@ -1566,6 +2522,18 @@ function startMaintenanceTasks() {
       logger.error('Inactive users cleanup error:', error);
     }
   }, 7 * 24 * 60 * 60 * 1000);
+
+  // تنظيف الجلسات القديمة يومياً
+  setInterval(async () => {
+    try {
+      const cleaned = await cleanupOldSessions(7);
+      if (cleaned > 0) {
+        logger.info(`🧽 Cleaned ${cleaned} old sessions`);
+      }
+    } catch (error) {
+      logger.error('Sessions cleanup error:', error);
+    }
+  }, 24 * 60 * 60 * 1000);
 }
 
 export default app;
