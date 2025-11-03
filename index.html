@@ -1,713 +1,1299 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>منصة التعليم الإلكتروني - احجزلي</title>
-  
-  <!-- Meta Tags for SEO & Security -->
-  <meta name="description" content="منصة تعليمية احترافية تقدم أفضل الكورسات والدروس في مختلف المجالات - طور مهاراتك مع احجزلي">
-  <meta name="theme-color" content="#1a7f46">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com https://placehold.co; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com 'unsafe-inline';">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="icon" href="./images/favicon.png">
-  
-  <!-- Bootstrap + Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-  
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  
-  <style>
-    :root {
-      --primary-color: #1a7f46;
-      --secondary-color: #2ecc71;
-      --accent-color: #f39c12;
-      --dark-color: #2c3e50;
-      --light-color: #ecf0f1;
-      --blue-color: #3498db;
-      --gold-color: #ffd700;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elmahdy English | المنصة التعليمية لتقوية اللغة الإنجليزية</title>
     
-    body {
-      font-family: 'Cairo', sans-serif;
-      background-color: #f8f9fa;
-      color: #333;
-      overflow-x: hidden;
-    }
+    <!-- Meta Tags for SEO & Security -->
+    <meta name="description" content="Elmahdy English - منصة تعليمية احترافية لتقوية اللغة الإنجليزية مع أفضل المدرسين - طور مهاراتك في الإنجليزية معنا">
+    <meta name="keywords" content="تعلم الإنجليزية, كورسات لغة, English Courses, Elmahdy English, تعليم الإنجليزية">
+    <meta name="theme-color" content="#0056d6">
+    <meta property="og:image" content="/images/og-image.jpg">
+    <meta property="og:title" content="Elmahdy English - تعلم الإنجليزية بطريقة مختلفة">
+    <meta property="og:description" content="دروس تفاعلية وشهادات معتمدة لتعلم اللغة الإنجليزية.">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com https://placehold.co; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com 'unsafe-inline';">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="icon" href="./images/favicon.png">
+    
+    <!-- Bootstrap + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #0056d6; /* أزرق ملكي */
+            --secondary-color: #00c6ff; /* سماوي متدرج */
+            --accent-color: #ffc107; /* ذهبي */
+            --dark-color: #1c1c1c;
+            --light-color: #f8f9fb;
+            --success-color: #28a745;
+        }
+        
+        .dark-mode {
+            --primary-color: #1e88e5;
+            --secondary-color: #4fc3f7;
+            --dark-color: #121212;
+            --light-color: #1e1e1e;
+        }
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+        }
 
-    /* Navigation */
-    .navbar {
-      background: rgba(255, 255, 255, 0.95) !important;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 2px 20px rgba(0,0,0,0.1);
-      transition: all 0.3s ease;
-    }
-    
-    .navbar.scrolled {
-      background: rgba(255, 255, 255, 0.98) !important;
-      padding: 0.5rem 0;
-    }
-    
-    .navbar-brand {
-      font-weight: 700;
-      color: var(--primary-color) !important;
-      font-size: 1.5rem;
-    }
-    
-    .nav-link {
-      font-weight: 500;
-      margin: 0 0.5rem;
-      color: var(--dark-color) !important;
-      transition: color 0.3s ease;
-    }
-    
-    .nav-link:hover, .nav-link.active {
-      color: var(--primary-color) !important;
-    }
+        .dark-mode body {
+            background: #121212;
+            color: #eee;
+        }
 
-    /* Hero Section */
-    .hero-section {
-      background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
-                  url('./images/education-bg.jpg') center/cover no-repeat;
-      min-height: 80vh;
-      display: flex;
-      align-items: center;
-      color: white;
-      position: relative;
-      margin-top: 76px;
-    }
-    
-    .hero-content {
-      text-align: center;
-    }
-    
-    .hero-title {
-      font-size: 3.5rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
-    }
-    
-    .hero-subtitle {
-      font-size: 1.3rem;
-      margin-bottom: 2rem;
-      opacity: 0.9;
-      line-height: 1.6;
-    }
-    
-    .hero-buttons {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
+        /* Navigation */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .dark-mode .navbar {
+            background: rgba(30, 30, 30, 0.95) !important;
+            color: #eee;
+        }
+        
+        .navbar.scrolled {
+            background: rgba(255, 255, 255, 0.98) !important;
+            padding: 0.5rem 0;
+        }
+        
+        .dark-mode .navbar.scrolled {
+            background: rgba(30, 30, 30, 0.98) !important;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-color) !important;
+            font-size: 1.5rem;
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            margin: 0 0.5rem;
+            color: var(--dark-color) !important;
+            transition: color 0.3s ease;
+        }
+        
+        .dark-mode .nav-link {
+            color: #eee !important;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-color) !important;
+        }
 
-    /* Course Cards */
-    .course-card {
-      border: none;
-      border-radius: 15px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-      transition: all 0.3s ease;
-      margin-bottom: 2rem;
-      position: relative;
-    }
-    
-    .course-card:hover {
-      transform: translateY(-10px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-    }
-    
-    .course-image {
-      height: 200px;
-      background-size: cover;
-      background-position: center;
-      position: relative;
-    }
-    
-    .course-badge {
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      background: var(--primary-color);
-      color: white;
-      padding: 0.3rem 0.8rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-    
-    .course-price {
-      position: absolute;
-      bottom: 15px;
-      left: 15px;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 25px;
-      font-weight: 600;
-    }
-    
-    .course-info {
-      padding: 1.5rem;
-    }
-    
-    .course-title {
-      font-size: 1.3rem;
-      font-weight: 600;
-      color: var(--dark-color);
-      margin-bottom: 0.5rem;
-    }
-    
-    .course-instructor {
-      color: #666;
-      margin-bottom: 1rem;
-    }
-    
-    .course-features {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    
-    .feature {
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.8rem;
-      color: #666;
-      background: #f8f9fa;
-      padding: 0.3rem 0.6rem;
-      border-radius: 12px;
-    }
-    
-    .feature i {
-      color: var(--primary-color);
-    }
+        /* Sidebar */
+        .sidebar {
+            background: #fff;
+            height: 100vh;
+            position: fixed;
+            right: 0;
+            top: 76px;
+            width: 280px;
+            border-left: 1px solid #eee;
+            overflow-y: auto;
+            padding: 20px 15px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+        }
+        
+        .dark-mode .sidebar {
+            background: #1e1e1e;
+            border-left: 1px solid #333;
+        }
+        
+        .sidebar .user-info {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .dark-mode .sidebar .user-info {
+            border-bottom: 1px solid #333;
+        }
+        
+        .sidebar .user-info img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .sidebar .user-info h5 { 
+            color: var(--primary-color); 
+            font-weight: 700; 
+            margin-bottom: 5px;
+        }
+        
+        .sidebar .user-info p { 
+            color: #666; 
+            margin: 0;
+        }
+        
+        .dark-mode .sidebar .user-info p {
+            color: #aaa;
+        }
+        
+        .sidebar .wallet {
+            background: #f8f8f8;
+            padding: 12px 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            font-weight: 600;
+        }
+        
+        .dark-mode .sidebar .wallet {
+            background: #2a2a2a;
+        }
+        
+        .sidebar ul { 
+            list-style: none; 
+            padding: 0; 
+            margin: 0;
+        }
+        
+        .sidebar li { 
+            margin-bottom: 5px;
+        }
+        
+        .sidebar li a {
+            display: flex; 
+            align-items: center;
+            color: #555; 
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .dark-mode .sidebar li a {
+            color: #ccc;
+        }
+        
+        .sidebar li a:hover, .sidebar li a.active {
+            background: rgba(0, 86, 214, 0.1);
+            color: var(--primary-color);
+            font-weight: 600;
+            transform: translateX(-5px);
+        }
+        
+        .dark-mode .sidebar li a:hover, 
+        .dark-mode .sidebar li a.active {
+            background: rgba(30, 136, 229, 0.2);
+        }
+        
+        .sidebar li i {
+            margin-left: 12px;
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
 
-    /* Sections */
-    .section-title {
-      font-size: 2.5rem;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: 3rem;
-      color: var(--dark-color);
-      position: relative;
-    }
-    
-    .section-title::after {
-      content: '';
-      position: absolute;
-      bottom: -10px;
-      right: 50%;
-      transform: translateX(50%);
-      width: 80px;
-      height: 4px;
-      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-      border-radius: 2px;
-    }
+        /* Stats Bar */
+        .stats-bar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .stats-bar > div {
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .stats-bar i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .stats-bar p {
+            margin: 5px 0;
+            opacity: 0.9;
+        }
+        
+        .stats-bar h5 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
 
-    /* Buttons */
-    .btn-primary {
-      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-      border: none;
-      padding: 0.8rem 2rem;
-      font-weight: 600;
-      border-radius: 25px;
-      transition: all 0.3s ease;
-    }
-    
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(26, 127, 70, 0.3);
-    }
+        /* Dashboard */
+        .dashboard {
+            margin-right: 280px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(100%);
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .dashboard {
+                margin-right: 0;
+            }
+        }
 
-    /* Sidebar */
-    .sidebar {
-      background: #fff;
-      height: 100vh;
-      position: fixed;
-      right: 0;
-      width: 250px;
-      border-left: 1px solid #eee;
-      overflow-y: auto;
-      padding: 15px;
-    }
-    
-    .sidebar .user-info {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    
-    .sidebar .user-info img {
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-    }
-    
-    .sidebar .user-info h5 { color: #4b0082; font-weight: 700; }
-    
-    .sidebar .wallet {
-      background: #f8f8f8;
-      padding: 8px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    
-    .sidebar ul { list-style: none; padding: 0; }
-    .sidebar li a {
-      display: flex; align-items: center;
-      color: #555; text-decoration: none;
-      padding: 10px 5px;
-      border-radius: 8px;
-    }
-    
-    .sidebar li a:hover, .sidebar li a.active {
-      background: #f0e6ff;
-      color: #4b0082;
-      font-weight: 600;
-    }
-    
-    .sidebar li i {
-      margin-left: 10px;
-      font-size: 18px;
-    }
+        /* Course Cards */
+        .course-card {
+            border: none;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.4s ease;
+            margin-bottom: 2rem;
+            position: relative;
+            background: white;
+        }
+        
+        .dark-mode .course-card {
+            background: #1e1e1e;
+            color: #eee;
+        }
+        
+        .course-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .course-image {
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        
+        .course-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 2;
+        }
+        
+        .course-price {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            z-index: 2;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0; 
+            right: 0; 
+            bottom: 0; 
+            left: 0;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            opacity: 0;
+            transition: 0.3s;
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            z-index: 1;
+        }
+        
+        .course-card:hover .overlay {
+            opacity: 1;
+        }
+        
+        .course-info {
+            padding: 1.5rem;
+        }
+        
+        .course-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .dark-mode .course-title {
+            color: #eee;
+        }
+        
+        .course-instructor {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        
+        .dark-mode .course-instructor {
+            color: #aaa;
+        }
+        
+        .course-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.8rem;
+            color: #666;
+            background: #f8f9fa;
+            padding: 0.3rem 0.6rem;
+            border-radius: 12px;
+        }
+        
+        .dark-mode .feature {
+            background: #2a2a2a;
+            color: #aaa;
+        }
+        
+        .feature i {
+            color: var(--primary-color);
+        }
 
-    /* Progress Bar */
-    .progress-container {
-      background: #f8f9fa;
-      border-radius: 10px;
-      padding: 1rem;
-      margin: 1rem 0;
-    }
-    
-    .progress-label {
-      display: flex;
-      justify-content: between;
-      margin-bottom: 0.5rem;
-    }
-    
-    .progress-bar {
-      height: 8px;
-      background: #e9ecef;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-      border-radius: 4px;
-      transition: width 0.3s ease;
-    }
+        /* Progress Bar */
+        .progress-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .dark-mode .progress-container {
+            background: #2a2a2a;
+        }
+        
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .dark-mode .progress-bar {
+            background: #333;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-      .hero-title {
-        font-size: 2.5rem;
-      }
-      
-      .section-title {
-        font-size: 2rem;
-      }
-      
-      .sidebar {
-        position: relative;
-        width: 100%;
-        height: auto;
-      }
-    }
-  </style>
+        /* Rating */
+        .rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 10px 0;
+        }
+        
+        .rating i {
+            color: var(--accent-color);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            padding: 0.8rem 2rem;
+            font-weight: 600;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 86, 214, 0.3);
+        }
+
+        /* Dark Mode Toggle */
+        #darkModeToggle {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* WhatsApp Button */
+        .whatsapp-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 80px;
+            background: #25d366;
+            color: white;
+            font-size: 24px;
+            border-radius: 50%;
+            padding: 12px 14px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+        }
+
+        /* Toast */
+        .toast-container {
+            z-index: 1050;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .sidebar-toggle {
+                display: block !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                padding: 10px;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .whatsapp-btn {
+                left: 20px;
+                bottom: 80px;
+            }
+            
+            #darkModeToggle {
+                bottom: 20px;
+                left: 20px;
+            }
+        }
+
+        /* Sections */
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--dark-color);
+            position: relative;
+            padding-bottom: 10px;
+        }
+        
+        .dark-mode .section-title {
+            color: #eee;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 2px;
+        }
+
+        /* Loading */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        
+        .dark-mode #loadingOverlay {
+            background: #121212;
+        }
+        
+        #loadingOverlay.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .multi-circle-spinner {
+            text-align: center;
+        }
+        
+        .circle {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            margin: 0 5px;
+            animation: bounce 1.5s infinite ease-in-out;
+        }
+        
+        .circle:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+        
+        .circle:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+        
+        .circle:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+        
+        .circle:nth-child(5) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-15px);
+            }
+        }
+        
+        .loading-text {
+            margin-top: 20px;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .dark-mode .loading-text {
+            color: #eee;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--dark-color);
+            color: white;
+        }
+        
+        .dark-mode .footer {
+            background: #1a1a1a;
+        }
+        
+        .footer-links a {
+            display: block;
+            color: #ccc;
+            text-decoration: none;
+            margin-bottom: 8px;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: white;
+        }
+        
+        .social-links a {
+            display: inline-block;
+            color: white;
+            background: rgba(255,255,255,0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            margin-right: 10px;
+            transition: all 0.3s;
+        }
+        
+        .social-links a:hover {
+            background: var(--primary-color);
+            transform: translateY(-3px);
+        }
+
+        /* Empty State */
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #ccc;
+        }
+        
+        .dark-mode .empty-state {
+            color: #aaa;
+        }
+    </style>
 </head>
 <body>
 
 <!-- شاشة التحميل -->
 <div id="loadingOverlay">
-  <div class="multi-circle-spinner">
-    <div class="circle"></div>
-    <div class="circle"></div>
-    <div class="circle"></div>
-    <div class="circle"></div>
-    <div class="circle"></div>
-    <div class="loading-text">جاري التحميل...</div>
-  </div>
+    <div class="multi-circle-spinner">
+        <div class="circle"></div>
+        <div class="circle"></div>
+        <div class="circle"></div>
+        <div class="circle"></div>
+        <div class="circle"></div>
+        <div class="loading-text">جاري تحميل Elmahdy English...</div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="mainToast" class="toast align-items-center text-white border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
 </div>
 
 <!-- شريط التنقل -->
 <nav class="navbar navbar-expand-lg navbar-light fixed-top">
-  <div class="container">
-    <a class="navbar-brand" href="/">
-      <i class="bi bi-mortarboard me-2"></i>احجزلي التعليمية
-    </a>
-    
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link active" href="#home">الرئيسية</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#courses">الكورسات</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#features">المميزات</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/dashboard">
-            <i class="bi bi-person me-1"></i>لوحة التعلم
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/login">
-            <i class="bi bi-box-arrow-in-left me-1"></i>تسجيل الدخول
-          </a>
-        </li>
-      </ul>
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <img src="/images/elmahdy-logo.png" width="40" class="me-2" alt="Elmahdy English">
+            Elmahdy English
+        </a>
+        
+        <button class="navbar-toggler sidebar-toggle d-lg-none" type="button">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#home">الرئيسية</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#courses">الكورسات</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#features">المميزات</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">
+                        <i class="bi bi-person me-1"></i>لوحة التعلم
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/login">
+                        <i class="bi bi-box-arrow-in-left me-1"></i>تسجيل الدخول
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>
-  </div>
 </nav>
 
-<!-- Hero Section -->
-<section class="hero-section" id="home">
-  <div class="container">
-    <div class="hero-content fade-in">
-      <h1 class="hero-title text-light">طور مهاراتك مع احجزلي التعليمية</h1>
-      <p class="hero-subtitle text-light">منصة تعليمية احترافية تقدم أفضل الكورسات في البرمجة، التسويق، اللغات، وتطوير الذات. ابدأ رحلتك التعليمية اليوم!</p>
-      <div class="hero-buttons">
-        <a href="#courses" class="btn btn-primary btn-lg">
-          <i class="bi bi-search me-2"></i>استعرض الكورسات
-        </a>
-        <a href="/dashboard" class="btn btn-outline-light btn-lg">
-          <i class="bi bi-rocket me-2"></i>ابدأ التعلم
-        </a>
-      </div>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="user-info">
+        <img src="/images/student-avatar.png" alt="User">
+        <h5>محمد المهدي</h5>
+        <p class="text-muted">الصف الثالث الثانوي</p>
     </div>
-  </div>
-</section>
+    <div class="wallet">
+        <span><i class="bi bi-wallet2 me-2"></i>0 جنيه</span>
+        <a href="/wallet" class="text-success small">شحن</a>
+    </div>
+    <ul>
+        <li><a href="/" class="active"><i class="bi bi-house"></i> الرئيسية</a></li>
+        <li><a href="/courses"><i class="bi bi-journal-bookmark"></i> الكورسات</a></li>
+        <li><a href="/my-courses"><i class="bi bi-play-circle"></i> محاضراتي</a></li>
+        <li><a href="/free"><i class="bi bi-gift"></i> المجانية</a></li>
+        <li><a href="/tests"><i class="bi bi-pencil-square"></i> الامتحانات</a></li>
+        <li><a href="/store"><i class="bi bi-basket"></i> متجر الكتب</a></li>
+        <li><a href="/payments"><i class="bi bi-credit-card"></i> مدفوعاتي</a></li>
+        <li><a href="/support"><i class="bi bi-headset"></i> الدعم</a></li>
+        <li><a href="/logout"><i class="bi bi-box-arrow-right"></i> تسجيل خروج</a></li>
+    </ul>
+</div>
 
-<!-- قسم الكورسات المميزة -->
-<section class="py-5" id="courses">
-  <div class="container">
-    <h2 class="section-title">🎓 الكورسات المميزة</h2>
-    
-    <div class="row mb-4">
-      <div class="col-md-6">
-        <div class="search-box">
-          <input type="text" class="form-control" id="searchCourses" placeholder="🔍 ابحث عن كورسات...">
-        </div>
-      </div>
-      <div class="col-md-3">
-        <select class="form-select" id="categoryFilter">
-          <option value="">جميع التصنيفات</option>
-          <option value="programming">برمجة وتطوير</option>
-          <option value="design">تصميم</option>
-          <option value="marketing">تسويق</option>
-          <option value="language">لغات</option>
-        </select>
-      </div>
-      <div class="col-md-3">
-        <select class="form-select" id="levelFilter">
-          <option value="">جميع المستويات</option>
-          <option value="beginner">مبتدئ</option>
-          <option value="intermediate">متوسط</option>
-          <option value="advanced">متقدم</option>
-        </select>
-      </div>
+<!-- Main Content -->
+<div class="dashboard">
+    <!-- Stats Bar -->
+    <div class="stats-bar container d-flex justify-content-around text-center">
+        <div><i class="bi bi-journal"></i><p>عدد الكورسات</p><h5 id="coursesCount">12</h5></div>
+        <div><i class="bi bi-clock-history"></i><p>عدد الساعات</p><h5 id="hoursCount">38</h5></div>
+        <div><i class="bi bi-award"></i><p>شهادات</p><h5 id="certificatesCount">3</h5></div>
     </div>
 
-    <div class="row" id="coursesContainer">
-      <!-- سيتم تعبئة الكورسات ديناميكياً -->
-    </div>
-  </div>
-</section>
+    <div class="container">
+        <!-- Latest Courses -->
+        <h2 class="section-title">📚 أحدث محاضراتك</h2>
+        <p class="text-muted mb-3" id="resultsCount">تم العثور على 0 كورس</p>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="search-box">
+                    <input type="text" class="form-control" id="searchCourses" placeholder="🔍 ابحث عن كورسات...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="categoryFilter">
+                    <option value="">جميع التصنيفات</option>
+                    <option value="grammar">قواعد اللغة</option>
+                    <option value="conversation">محادثة</option>
+                    <option value="writing">كتابة</option>
+                    <option value="listening">استماع</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="levelFilter">
+                    <option value="">جميع المستويات</option>
+                    <option value="beginner">مبتدئ</option>
+                    <option value="intermediate">متوسط</option>
+                    <option value="advanced">متقدم</option>
+                </select>
+            </div>
+        </div>
 
-<!-- قسم المميزات -->
-<section class="features-section py-5 bg-light" id="features">
-  <div class="container">
-    <h2 class="section-title">✨ لماذا تختار منصتنا؟</h2>
-    <div class="row">
-      <div class="col-md-4 mb-4">
-        <div class="feature-card text-center">
-          <div class="feature-icon">
-            <i class="bi bi-play-circle"></i>
-          </div>
-          <h4>دروس فيديو عالية الجودة</h4>
-          <p>شاهد الدروس بأعلى جودة مع إمكانية التحكم في السرعة</p>
+        <div class="row" id="latestCoursesContainer">
+            <!-- سيتم تعبئة الكورسات ديناميكياً -->
         </div>
-      </div>
-      <div class="col-md-4 mb-4">
-        <div class="feature-card text-center">
-          <div class="feature-icon">
-            <i class="bi bi-laptop"></i>
-          </div>
-          <h4>تعلم في أي وقت</h4>
-          <p>الدراسة متاحة 24/7 من أي جهاز ومن أي مكان</p>
+
+        <!-- Monthly Bundles -->
+        <h2 class="section-title mt-5">🎁 باقات الشهر</h2>
+        <div class="row" id="monthlyBundlesContainer">
+            <!-- سيتم تعبئة الباقات ديناميكياً -->
         </div>
-      </div>
-      <div class="col-md-4 mb-4">
-        <div class="feature-card text-center">
-          <div class="feature-icon">
-            <i class="bi bi-award"></i>
-          </div>
-          <h4>شهادات معتمدة</h4>
-          <p>احصل على شهادات إتمام معتمدة بعد إنهاء كل كورس</p>
-        </div>
-      </div>
     </div>
-  </div>
-</section>
+</div>
+
+<!-- Dark Mode Toggle -->
+<button id="darkModeToggle" class="btn btn-sm btn-outline-dark">
+    <i class="bi bi-moon"></i>
+</button>
+
+<!-- WhatsApp Button -->
+<a href="https://wa.me/201000000000" class="whatsapp-btn" target="_blank">
+    <i class="bi bi-whatsapp"></i>
+</a>
 
 <!-- Footer -->
-<footer class="footer bg-dark text-white py-5">
-  <div class="container">
-    <div class="row">
-      <div class="col-lg-4 col-md-6 mb-4">
-        <h5>منصة احجزلي التعليمية</h5>
-        <p>نحو مستقبل أفضل بالتعليم الإلكتروني. نقدم أفضل الكورسات في مختلف المجالات.</p>
-        <div class="social-links">
-          <a href="#"><i class="bi bi-facebook"></i></a>
-          <a href="#"><i class="bi bi-whatsapp"></i></a>
-          <a href="#"><i class="bi bi-instagram"></i></a>
+<footer class="footer bg-dark text-white py-5 mt-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h5>Elmahdy English</h5>
+                <p>المنصة التعليمية الرائدة لتقوية اللغة الإنجليزية. نقدم أفضل الكورسات مع مدرسين متخصصين.</p>
+                <div class="social-links">
+                    <a href="#"><i class="bi bi-facebook"></i></a>
+                    <a href="#"><i class="bi bi-whatsapp"></i></a>
+                    <a href="#"><i class="bi bi-instagram"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-6 mb-4">
+                <h5>التصنيفات</h5>
+                <div class="footer-links">
+                    <a href="#courses">قواعد اللغة</a>
+                    <a href="#courses">محادثة</a>
+                    <a href="#courses">كتابة</a>
+                    <a href="#courses">استماع</a>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <h5>روابط سريعة</h5>
+                <div class="footer-links">
+                    <a href="/dashboard">لوحة التعلم</a>
+                    <a href="/courses">جميع الكورسات</a>
+                    <a href="/profile">الملف الشخصي</a>
+                    <a href="/support">الدعم</a>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <h5>اتصل بنا</h5>
+                <div class="footer-links">
+                    <a href="tel:+201000000000"><i class="bi bi-phone me-2"></i>+20 100 000 0000</a>
+                    <a href="mailto:info@elmahdy-english.com"><i class="bi bi-envelope me-2"></i>info@elmahdy-english.com</a>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="col-lg-2 col-md-6 mb-4">
-        <h5>التصنيفات</h5>
-        <div class="footer-links">
-          <a href="#courses">برمجة</a>
-          <a href="#courses">تصميم</a>
-          <a href="#courses">تسويق</a>
-          <a href="#courses">لغات</a>
+        <hr>
+        <div class="text-center py-3">
+            <p class="mb-0">&copy; 2024 Elmahdy English. جميع الحقوق محفوظة.</p>
         </div>
-      </div>
-      <div class="col-lg-3 col-md-6 mb-4">
-        <h5>روابط سريعة</h5>
-        <div class="footer-links">
-          <a href="/dashboard">لوحة التعلم</a>
-          <a href="/courses">جميع الكورسات</a>
-          <a href="/profile">الملف الشخصي</a>
-          <a href="/support">الدعم</a>
-        </div>
-      </div>
-      <div class="col-lg-3 col-md-6 mb-4">
-        <h5>اتصل بنا</h5>
-        <div class="footer-links">
-          <a href="tel:+201000000000"><i class="bi bi-phone me-2"></i>+20 100 000 0000</a>
-          <a href="mailto:info@ehgzly.com"><i class="bi bi-envelope me-2"></i>info@ehgzly.com</a>
-        </div>
-      </div>
     </div>
-    <hr>
-    <div class="text-center py-3">
-      <p class="mb-0">&copy; 2024 منصة احجزلي التعليمية. جميع الحقوق محفوظة.</p>
-    </div>
-  </div>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  // دوال جلب وعرض الكورسات
-  async function loadCourses(filters = {}) {
-    try {
-      const params = new URLSearchParams();
-      if (filters.category) params.append('category', filters.category);
-      if (filters.level) params.append('level', filters.level);
-      if (filters.search) params.append('search', filters.search);
-
-      const res = await fetch(`/api/courses?${params}`);
-      const courses = await res.json();
-      
-      renderCourses(courses);
-    } catch (error) {
-      console.error('Error loading courses:', error);
-      renderDefaultCourses();
-    }
-  }
-
-  function renderCourses(courses) {
-    const container = document.getElementById('coursesContainer');
-    
-    if (!Array.isArray(courses) || courses.length === 0) {
-      container.innerHTML = `
-        <div class="col-12 text-center">
-          <div class="empty-state">
-            <i class="bi bi-search"></i>
-            <h5>لا توجد كورسات تطابق بحثك</h5>
-            <p>جرب تعديل فلتر البحث أو البحث بكلمات أخرى</p>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    container.innerHTML = courses.map(course => `
-      <div class="col-lg-4 col-md-6 mb-4">
-        <div class="course-card h-100">
-          <div class="course-image" style="background-image: url('${course.image || 'https://placehold.co/600x400/1a7f46/white?text=كورس'}')">
-            <span class="course-badge">${course.category}</span>
-            <span class="course-price">${course.is_free ? 'مجاني' : course.price + ' ج.م'}</span>
-          </div>
-          <div class="course-info">
-            <h4 class="course-title">${course.title}</h4>
-            <p class="course-instructor">
-              <i class="bi bi-person"></i> ${course.instructor}
-            </p>
+    // دوال جلب وعرض الكورسات
+    async function loadCourses(filters = {}) {
+        try {
+            showLoading(true);
             
-            <div class="course-features">
-              <span class="feature">
-                <i class="bi bi-clock"></i> ${course.duration} ساعة
-              </span>
-              <span class="feature">
-                <i class="bi bi-bar-chart"></i> ${course.level}
-              </span>
-              <span class="feature">
-                <i class="bi bi-play-circle"></i> ${course.lessons_count} درس
-              </span>
-            </div>
+            const params = new URLSearchParams();
+            if (filters.category) params.append('category', filters.category);
+            if (filters.level) params.append('level', filters.level);
+            if (filters.search) params.append('search', filters.search);
 
-            <div class="progress-container">
-              <div class="progress-label">
-                <span>التقدم</span>
-                <span>${course.progress || 0}%</span>
-              </div>
-              <div class="progress-bar">
-                <div class="progress-fill" style="width: ${course.progress || 0}%"></div>
-              </div>
-            </div>
-
-            <button class="btn btn-primary w-100 mt-2" onclick="enrollCourse(${course.id})">
-              ${course.is_enrolled ? 'استكمال التعلم' : (course.is_free ? 'ابدأ الآن' : 'اشترك الآن')}
-            </button>
-          </div>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function renderDefaultCourses() {
-    const defaultCourses = [
-      {
-        id: 1,
-        title: "تعلم البرمجة من الصفر",
-        instructor: "أحمد محمد",
-        category: "برمجة",
-        level: "مبتدئ",
-        duration: 40,
-        lessons_count: 25,
-        price: 150,
-        is_free: false,
-        progress: 0,
-        image: "https://placehold.co/600x400/3498db/white?text=برمجة"
-      },
-      {
-        id: 2,
-        title: "التسويق الرقمي المتقدم",
-        instructor: "سارة أحمد",
-        category: "تسويق",
-        level: "متوسط",
-        duration: 30,
-        lessons_count: 18,
-        price: 200,
-        is_free: false,
-        progress: 0,
-        image: "https://placehold.co/600x400/e74c3c/white?text=تسويق"
-      },
-      {
-        id: 3,
-        title: "الإنجليزية للمبتدئين",
-        instructor: "محمد علي",
-        category: "لغات",
-        level: "مبتدئ",
-        duration: 50,
-        lessons_count: 30,
-        price: 0,
-        is_free: true,
-        progress: 0,
-        image: "https://placehold.co/600x400/2ecc71/white?text=لغات"
-      }
-    ];
-
-    renderCourses(defaultCourses);
-  }
-
-  async function enrollCourse(courseId) {
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        showToast('يرجى تسجيل الدخول أولاً', 'warning');
-        window.location.href = '/login';
-        return;
-      }
-
-      const res = await fetch('/api/enroll', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ courseId })
-      });
-
-      if (res.ok) {
-        const result = await res.json();
-        showToast('تم التسجيل في الكورس بنجاح', 'success');
-        window.location.href = `/course/${courseId}`;
-      } else {
-        const error = await res.json();
-        showToast(error.message, 'error');
-      }
-    } catch (error) {
-      console.error('Enrollment error:', error);
-      showToast('حدث خطأ أثناء التسجيل', 'error');
+            const res = await fetch(`/api/courses?${params}`);
+            const courses = await res.json();
+            
+            renderCourses(courses);
+            updateResultsCount(courses.length);
+        } catch (error) {
+            console.error('Error loading courses:', error);
+            renderDefaultCourses();
+        } finally {
+            showLoading(false);
+        }
     }
-  }
 
-  function showToast(message, type = 'success') {
-    // تنفيذ بسيط للإشعارات
-    alert(message);
-  }
+    function renderCourses(courses) {
+        const container = document.getElementById('latestCoursesContainer');
+        
+        if (!Array.isArray(courses) || courses.length === 0) {
+            container.innerHTML = `
+                <div class="col-12 text-center">
+                    <div class="empty-state">
+                        <i class="bi bi-search"></i>
+                        <h5>لا توجد كورسات تطابق بحثك</h5>
+                        <p>جرب تعديل فلتر البحث أو البحث بكلمات أخرى</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
 
-  // تهيئة الصفحة
-  document.addEventListener('DOMContentLoaded', function() {
-    loadCourses();
+        container.innerHTML = courses.map(course => `
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="course-card h-100">
+                    <div class="course-image" style="background-image: url('${course.image || 'https://placehold.co/600x400/0056d6/white?text=English+Course'}')">
+                        <span class="course-badge">${course.category}</span>
+                        <span class="course-price">${course.is_free ? 'مجاني' : course.price + ' ج.م'}</span>
+                        <div class="overlay">
+                            <h5>${course.title}</h5>
+                            <p>${course.short_description || 'تعلم الإنجليزية بطريقة احترافية مع أفضل المدرسين'}</p>
+                            <div class="mt-3">
+                                <button class="btn btn-light me-2" onclick="viewCourseDetails(${course.id})">عرض التفاصيل</button>
+                                <button class="btn btn-primary" onclick="enrollCourse(${course.id})">ابدأ المحاضرة</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="course-info">
+                        <h4 class="course-title">${course.title}</h4>
+                        <p class="course-instructor">
+                            <i class="bi bi-person"></i> ${course.instructor}
+                        </p>
+                        
+                        <div class="rating">
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-half"></i>
+                            <i class="bi bi-star"></i>
+                            <small>(${course.rating || '4.3'})</small>
+                        </div>
+                        
+                        <div class="course-features">
+                            <span class="feature">
+                                <i class="bi bi-clock"></i> ${course.duration} ساعة
+                            </span>
+                            <span class="feature">
+                                <i class="bi bi-bar-chart"></i> ${course.level}
+                            </span>
+                            <span class="feature">
+                                <i class="bi bi-play-circle"></i> ${course.lessons_count} درس
+                            </span>
+                        </div>
+
+                        <div class="progress-container">
+                            <div class="progress-label">
+                                <span>التقدم</span>
+                                <span>${course.progress || 0}%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${course.progress || 0}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-3">
+                            <button class="btn btn-primary flex-fill" onclick="enrollCourse(${course.id})">
+                                ${course.is_enrolled ? 'استكمال التعلم' : (course.is_free ? 'ابدأ الآن' : 'اشترك الآن')}
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="viewCourseDetails(${course.id})">
+                                <i class="bi bi-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+        // Lazy loading للصور
+        initLazyLoading();
+    }
     
-    // إعداد الفلاتر
-    document.getElementById('categoryFilter').addEventListener('change', function() {
-      loadCourses({
-        category: this.value,
-        level: document.getElementById('levelFilter').value,
-        search: document.getElementById('searchCourses').value
-      });
-    });
+    function renderDefaultCourses() {
+        const defaultCourses = [
+            {
+                id: 1,
+                title: "الإنجليزية للمبتدئين من الصفر",
+                instructor: "أحمد المهدي",
+                category: "قواعد اللغة",
+                level: "مبتدئ",
+                duration: 40,
+                lessons_count: 25,
+                price: 150,
+                is_free: false,
+                progress: 30,
+                rating: "4.5",
+                image: "https://placehold.co/600x400/0056d6/white?text=Beginner+English"
+            },
+            {
+                id: 2,
+                title: "محادثة إنجليزية متقدمة",
+                instructor: "سارة أحمد",
+                category: "محادثة",
+                level: "متقدم",
+                duration: 30,
+                lessons_count: 18,
+                price: 200,
+                is_free: false,
+                progress: 0,
+                rating: "4.8",
+                image: "https://placehold.co/600x400/00c6ff/white?text=Conversation"
+            },
+            {
+                id: 3,
+                title: "قواعد اللغة الإنجليزية الأساسية",
+                instructor: "محمد علي",
+                category: "قواعد اللغة",
+                level: "مبتدئ",
+                duration: 20,
+                lessons_count: 15,
+                price: 0,
+                is_free: true,
+                progress: 0,
+                rating: "4.3",
+                image: "https://placehold.co/600x400/ffc107/white?text=Grammar"
+            }
+        ];
 
-    document.getElementById('levelFilter').addEventListener('change', function() {
-      loadCourses({
-        category: document.getElementById('categoryFilter').value,
-        level: this.value,
-        search: document.getElementById('searchCourses').value
-      });
-    });
+        renderCourses(defaultCourses);
+        
+        // عرض الباقات الشهرية
+        renderMonthlyBundles();
+    }
+    
+    function renderMonthlyBundles() {
+        const bundles = [
+            {
+                id: 101,
+                title: "باقة المحادثة الشاملة",
+                description: "شامل جميع مستويات المحادثة + جلسات مباشرة",
+                price: 299,
+                originalPrice: 450,
+                image: "https://placehold.co/600x400/0056d6/white?text=Conversation+Bundle"
+            },
+            {
+                id: 102,
+                title: "باقة القواعد المتكاملة",
+                description: "جميع قواعد اللغة من البداية للإحتراف",
+                price: 199,
+                originalPrice: 320,
+                image: "https://placehold.co/600x400/00c6ff/white?text=Grammar+Bundle"
+            }
+        ];
+        
+        const container = document.getElementById('monthlyBundlesContainer');
+        container.innerHTML = bundles.map(bundle => `
+            <div class="col-lg-6 col-md-12 mb-4">
+                <div class="course-card">
+                    <div class="course-image" style="background-image: url('${bundle.image}')">
+                        <span class="course-badge">باقة خاصة</span>
+                        <span class="course-price" style="text-decoration: line-through; opacity: 0.7;">${bundle.originalPrice} ج.م</span>
+                        <span class="course-price" style="bottom: 50px; background: var(--accent-color);">${bundle.price} ج.م</span>
+                    </div>
+                    <div class="course-info">
+                        <h4 class="course-title">${bundle.title}</h4>
+                        <p>${bundle.description}</p>
+                        <button class="btn btn-primary w-100" onclick="enrollCourse(${bundle.id})">
+                            اشترك الآن ووفر ${bundle.originalPrice - bundle.price} ج.م
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
 
-    document.getElementById('searchCourses').addEventListener('input', function() {
-      loadCourses({
-        category: document.getElementById('categoryFilter').value,
-        level: document.getElementById('levelFilter').value,
-        search: this.value
-      });
-    });
+    async function enrollCourse(courseId) {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                showToast('يرجى تسجيل الدخول أولاً', 'warning');
+                window.location.href = '/login';
+                return;
+            }
 
-    // إخفاء شاشة التحميل
-    setTimeout(() => {
-      document.getElementById('loadingOverlay').classList.add('fade-out');
-    }, 1000);
-  });
+            const res = await fetch('/api/enroll', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ courseId })
+            });
+
+            if (res.ok) {
+                const result = await res.json();
+                showToast('تم التسجيل في الكورس بنجاح', 'success');
+                // حفظ التقدم
+                await saveProgress(courseId, 1);
+                window.location.href = `/course/${courseId}`;
+            } else {
+                const error = await res.json();
+                showToast(error.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Enrollment error:', error);
+            showToast('حدث خطأ أثناء التسجيل', 'danger');
+        }
+    }
+    
+    async function saveProgress(courseId, lessonId) {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token) return;
+            
+            await fetch('/api/progress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({courseId, lessonId})
+            });
+        } catch (error) {
+            console.error('Error saving progress:', error);
+        }
+    }
+    
+    function viewCourseDetails(courseId) {
+        window.location.href = `/course/${courseId}`;
+    }
+    
+    function updateResultsCount(count) {
+        document.getElementById('resultsCount').textContent = `تم العثور على ${count} كورس`;
+    }
+    
+    function showLoading(show) {
+        // يمكن إضافة مؤشر تحميل إذا لزم الأمر
+    }
+    
+    // Toast System
+    function showToast(message, type = 'success') {
+        const toastEl = document.getElementById('mainToast');
+        const toastBody = toastEl.querySelector('.toast-body');
+        
+        // إزالة كلاسسات اللون السابقة
+        toastEl.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'bg-primary');
+        
+        // إضافة لون حسب النوع
+        switch(type) {
+            case 'success':
+                toastEl.classList.add('bg-success');
+                break;
+            case 'danger':
+                toastEl.classList.add('bg-danger');
+                break;
+            case 'warning':
+                toastEl.classList.add('bg-warning');
+                break;
+            default:
+                toastEl.classList.add('bg-primary');
+        }
+        
+        toastBody.textContent = message;
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+    }
+    
+    // Lazy Loading للصور
+    function initLazyLoading() {
+        const imgs = document.querySelectorAll('.lazyload');
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    observer.unobserve(img);
+                }
+            });
+        });
+        
+        imgs.forEach(img => observer.observe(img));
+    }
+    
+    // Dark Mode Toggle
+    function initDarkMode() {
+        const toggle = document.getElementById('darkModeToggle');
+        const icon = toggle.querySelector('i');
+        
+        // التحقق من الإعدادات المحفوظة
+        const isDarkMode = localStorage.getItem('darkMode') === 'true';
+        if (isDarkMode) {
+            document.body.classList.add('dark-mode');
+            icon.classList.remove('bi-moon');
+            icon.classList.add('bi-sun');
+        }
+        
+        toggle.onclick = () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            
+            // تغيير الأيقونة
+            if (isDark) {
+                icon.classList.remove('bi-moon');
+                icon.classList.add('bi-sun');
+            } else {
+                icon.classList.remove('bi-sun');
+                icon.classList.add('bi-moon');
+            }
+            
+            // حفظ الإعداد
+            localStorage.setItem('darkMode', isDark);
+        };
+    }
+    
+    // Sidebar Toggle للهواتف
+    function initSidebarToggle() {
+        const sidebar = document.querySelector('.sidebar');
+        const toggle = document.querySelector('.sidebar-toggle');
+        
+        if (toggle && sidebar) {
+            toggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+        }
+        
+        // إغلاق السايدبار عند النقر خارجها
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth < 992 && 
+                !sidebar.contains(e.target) && 
+                !toggle.contains(e.target) && 
+                sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        });
+    }
+
+    // تهيئة الصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+        loadCourses();
+        
+        // إعداد الفلاتر
+        document.getElementById('categoryFilter').addEventListener('change', function() {
+            loadCourses({
+                category: this.value,
+                level: document.getElementById('levelFilter').value,
+                search: document.getElementById('searchCourses').value
+            });
+        });
+
+        document.getElementById('levelFilter').addEventListener('change', function() {
+            loadCourses({
+                category: document.getElementById('categoryFilter').value,
+                level: this.value,
+                search: document.getElementById('searchCourses').value
+            });
+        });
+
+        document.getElementById('searchCourses').addEventListener('input', function() {
+            loadCourses({
+                category: document.getElementById('categoryFilter').value,
+                level: document.getElementById('levelFilter').value,
+                search: this.value
+            });
+        });
+
+        // إخفاء شاشة التحميل
+        setTimeout(() => {
+            document.getElementById('loadingOverlay').classList.add('fade-out');
+        }, 1500);
+        
+        // تهيئة Dark Mode
+        initDarkMode();
+        
+        // تهيئة Sidebar Toggle
+        initSidebarToggle();
+        
+        // تأثير التمرير على النافبار
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+    });
 </script>
 </body>
 </html>
