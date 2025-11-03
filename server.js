@@ -24,6 +24,12 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ====== إعداد اللوجر البسيط ======
+const logger = {
+  info: (...msg) => console.log(`[INFO ${new Date().toISOString()}]`, ...msg),
+  error: (...msg) => console.error(`[ERROR ${new Date().toISOString()}]`, ...msg),
+};
+
 // ====== إعداد الاتصال بقاعدة البيانات PostgreSQL ======
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/educationdb',
@@ -65,15 +71,9 @@ app.use(
     secret: process.env.SESSION_SECRET || 'supersecretkey',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false },
+    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }, // 24 ساعة
   })
 );
-
-// ====== إعداد اللوجر البسيط ======
-const logger = {
-  info: (...msg) => console.log(`[INFO ${new Date().toISOString()}]`, ...msg),
-  error: (...msg) => console.error(`[ERROR ${new Date().toISOString()}]`, ...msg),
-};
 
 // ====== دالة إرسال بريد إلكتروني آمن ======
 async function sendEmailSafe({ to, subject, html }) {
@@ -87,8 +87,10 @@ async function sendEmailSafe({ to, subject, html }) {
     });
     await transporter.sendMail({ from: process.env.EMAIL_USER, to, subject, html });
     logger.info(`📧 Email sent to ${to}`);
+    return true;
   } catch (error) {
     logger.error('Email send error:', error.message);
+    return false;
   }
 }
 
@@ -110,7 +112,7 @@ function generateCode(length = 6) {
 }
 
 function formatPrice(amount) {
-  return `${amount.toFixed(2)} EGP`;
+  return `${amount?.toFixed(2) || '0.00'} EGP`;
 }
 
 function success(res, data = {}, message = 'تم بنجاح') {
@@ -126,15 +128,93 @@ function currentUser(req) {
 }
 
 function loginUser(req, user) {
-  req.session.user = { id: user.id, email: user.email, role: user.role, username: user.username };
+  req.session.user = { 
+    id: user.id, 
+    email: user.email, 
+    role: user.role, 
+    username: user.username 
+  };
+  req.session.save();
 }
 
 function logoutUser(req) {
-  req.session.destroy();
+  req.session.destroy((err) => {
+    if (err) {
+      logger.error('Logout error:', err);
+    }
+  });
 }
 
 // ====== دالة ثابتة لتوليد رابط التطبيق ======
 const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
+
+// ====== دوال إضافية مفيدة ======
+
+// دالة التحقق من صحة البريد الإلكتروني
+function validateEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+// دالة تنظيف المدخلات
+function sanitizeInput(input) {
+  if (typeof input !== 'string') return input;
+  return input.replace(/[<>&'"]/g, (char) => ({
+    '<': '&lt;',
+    '>': '&gt;',
+    '&': '&amp;',
+    "'": '&#39;',
+    '"': '&quot;'
+  }[char]));
+}
+
+// دالة تنسيق التاريخ
+function formatDate(date) {
+  return new Date(date).toLocaleDateString('ar-EG', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+
+// دالة الحصول على كورسات المستخدم
+async function getUserCourses(userId) {
+  return await execQuery(`
+    SELECT c.*, e.progress, e.enrolled_at 
+    FROM courses c
+    JOIN enrollments e ON e.course_id = c.id
+    WHERE e.user_id = $1
+    ORDER BY e.updated_at DESC
+  `, [userId]);
+}
+
+// دالة الحصول على كورسات المدرب
+async function getInstructorCourses(instructorId) {
+  return await execQuery(`
+    SELECT c.*, 
+           (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as students_count
+    FROM courses c 
+    WHERE c.instructor_id = $1
+    ORDER BY c.created_at DESC
+  `, [instructorId]);
+}
+
+// دالة الحصول على إحصائيات النظام
+async function getSystemStats() {
+  const users = await execQuery('SELECT COUNT(*) as count FROM users');
+  const courses = await execQuery('SELECT COUNT(*) as count FROM courses WHERE published = true');
+  const enrollments = await execQuery('SELECT COUNT(*) as count FROM enrollments');
+  const revenue = await execQuery(`
+    SELECT COALESCE(SUM(amount), 0) as total FROM payment_sessions WHERE status = 'completed'
+  `);
+  
+  return {
+    totalUsers: parseInt(users[0].count),
+    totalCourses: parseInt(courses[0].count),
+    totalEnrollments: parseInt(enrollments[0].count),
+    totalRevenue: parseFloat(revenue[0].total)
+  };
+}
 
 // ========= نظام الكورسات والدروس =========
 
@@ -170,10 +250,10 @@ app.get('/api/courses', async (req, res) => {
     if (search) {
       paramCount++;
       query += ` AND (c.title ILIKE $${paramCount} OR c.description ILIKE $${paramCount})`;
-      params.push(`%${search}%`);
+      params.push(`%${sanitizeInput(search)}%`);
     }
 
-    if (featured) {
+    if (featured === 'true') {
       query += ` AND c.featured = true`;
     }
 
@@ -194,99 +274,10 @@ app.get('/api/courses', async (req, res) => {
       }
     }
 
-    res.json(courses);
+    success(res, { courses });
   } catch (error) {
     logger.error('Get courses error', error);
-    res.status(500).json({ message: 'حدث خطأ في جلب الكورسات' });
-  }
-});
-
-// التسجيل في كورس
-app.post('/api/enroll', requireLogin, async (req, res) => {
-  try {
-    const { courseId } = req.body;
-    
-    // التحقق من وجود الكورس
-    const courses = await execQuery('SELECT * FROM courses WHERE id = $1', [courseId]);
-    if (courses.length === 0) {
-      return res.status(404).json({ message: 'الكورس غير موجود' });
-    }
-
-    const course = courses[0];
-
-    // التحقق من عدم التسجيل مسبقاً
-    const existingEnrollment = await execQuery(
-      'SELECT id FROM enrollments WHERE user_id = $1 AND course_id = $2',
-      [req.session.user.id, courseId]
-    );
-
-    if (existingEnrollment.length > 0) {
-      return res.status(400).json({ message: 'أنت مسجل بالفعل في هذا الكورس' });
-    }
-
-    // إذا كان الكورس مجاني، التسجيل مباشرة
-    if (course.is_free || course.price === 0) {
-      const enrollmentId = uuidv4();
-      
-      await execQuery(
-        `INSERT INTO enrollments (id, user_id, course_id, enrolled_at, progress)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [enrollmentId, req.session.user.id, courseId, new Date(), 0]
-      );
-
-      // إرسال بريد التأكيد
-      try {
-        await sendEmailSafe({
-          to: req.session.user.email,
-          subject: 'تم تسجيلك في الكورس - Elmahdy English',
-          html: `
-            <div style="font-family: 'Cairo', Arial, sans-serif; direction: rtl; padding: 20px;">
-              <h2 style="color: #0056d6;">تم تسجيلك في الكورس بنجاح! 🎉</h2>
-              <p><strong>الكورس:</strong> ${course.title}</p>
-              <p><strong>المدرب:</strong> ${course.instructor_name}</p>
-              <p>يمكنك الآن البدء في التعلم من خلال لوحة التعلم.</p>
-              <a href="${APP_URL}/course/${courseId}" style="background: #0056d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-                ابدأ التعلم
-              </a>
-            </div>
-          `
-        });
-      } catch (emailError) {
-        logger.error('Failed to send enrollment email:', emailError);
-      }
-
-      return success(res, { 
-        enrollmentId: enrollmentId,
-        redirectUrl: `/course/${courseId}`
-      }, 'تم التسجيل في الكورس بنجاح');
-    }
-
-    // إذا كان الكورس مدفوع، إنشاء طلب دفع
-    const paymentSession = {
-      id: uuidv4(),
-      user_id: req.session.user.id,
-      course_id: courseId,
-      amount: course.price,
-      status: 'pending',
-      created_at: new Date()
-    };
-
-    await execQuery(
-      `INSERT INTO payment_sessions (id, user_id, course_id, amount, status, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [paymentSession.id, paymentSession.user_id, paymentSession.course_id, 
-       paymentSession.amount, paymentSession.status, paymentSession.created_at]
-    );
-
-    success(res, {
-      paymentRequired: true,
-      paymentSessionId: paymentSession.id,
-      amount: course.price
-    }, 'يجب إتمام عملية الدفع');
-
-  } catch (error) {
-    logger.error('Enrollment error', error);
-    fail(res, 'حدث خطأ أثناء التسجيل في الكورس');
+    fail(res, 'حدث خطأ في جلب الكورسات');
   }
 });
 
@@ -305,7 +296,7 @@ app.get('/api/courses/:id', async (req, res) => {
     `, [courseId]);
 
     if (courses.length === 0) {
-      return res.status(404).json({ message: 'الكورس غير موجود' });
+      return fail(res, 'الكورس غير موجود', 404);
     }
 
     const course = courses[0];
@@ -322,16 +313,16 @@ app.get('/api/courses/:id', async (req, res) => {
     // إضافة معلومات التقدم إذا كان المستخدم مسجل الدخول
     if (req.session.user) {
       const enrollment = await execQuery(
-        'SELECT progress, completed_lessons FROM enrollments WHERE user_id = $1 AND course_id = $2',
+        'SELECT progress, progress_data FROM enrollments WHERE user_id = $1 AND course_id = $2',
         [req.session.user.id, courseId]
       );
       
       course.is_enrolled = enrollment.length > 0;
       course.progress = enrollment.length > 0 ? enrollment[0].progress : 0;
-      course.completed_lessons = enrollment.length > 0 ? enrollment[0].completed_lessons : [];
+      course.progress_data = enrollment.length > 0 ? enrollment[0].progress_data : {};
     }
 
-    res.json({
+    success(res, {
       ...course,
       lessons: lessons
     });
@@ -342,11 +333,96 @@ app.get('/api/courses/:id', async (req, res) => {
   }
 });
 
+// التسجيل في كورس
+app.post('/api/enroll', requireLogin, async (req, res) => {
+  try {
+    const { courseId } = req.body;
+    
+    if (!courseId) {
+      return fail(res, 'معرف الكورس مطلوب', 400);
+    }
+
+    // التحقق من وجود الكورس
+    const courses = await execQuery('SELECT * FROM courses WHERE id = $1 AND published = true', [courseId]);
+    if (courses.length === 0) {
+      return fail(res, 'الكورس غير موجود', 404);
+    }
+
+    const course = courses[0];
+
+    // التحقق من عدم التسجيل مسبقاً
+    const existingEnrollment = await execQuery(
+      'SELECT id FROM enrollments WHERE user_id = $1 AND course_id = $2',
+      [req.session.user.id, courseId]
+    );
+
+    if (existingEnrollment.length > 0) {
+      return fail(res, 'أنت مسجل بالفعل في هذا الكورس', 400);
+    }
+
+    // إذا كان الكورس مجاني، التسجيل مباشرة
+    if (course.is_free || course.price === 0) {
+      const enrollmentId = uuidv4();
+      
+      await execQuery(
+        `INSERT INTO enrollments (id, user_id, course_id, enrolled_at, progress, progress_data)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [enrollmentId, req.session.user.id, courseId, new Date(), 0, JSON.stringify({})]
+      );
+
+      // إرسال بريد التأكيد
+      await sendEmailSafe({
+        to: req.session.user.email,
+        subject: 'تم تسجيلك في الكورس - Elmahdy English',
+        html: `
+          <div style="font-family: 'Cairo', Arial, sans-serif; direction: rtl; padding: 20px;">
+            <h2 style="color: #0056d6;">تم تسجيلك في الكورس بنجاح! 🎉</h2>
+            <p><strong>الكورس:</strong> ${course.title}</p>
+            <p>يمكنك الآن البدء في التعلم من خلال لوحة التعلم.</p>
+            <a href="${APP_URL}/course/${courseId}" style="background: #0056d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+              ابدأ التعلم
+            </a>
+          </div>
+        `
+      });
+
+      return success(res, { 
+        enrollmentId: enrollmentId,
+        redirectUrl: `/course/${courseId}`
+      }, 'تم التسجيل في الكورس بنجاح');
+    }
+
+    // إذا كان الكورس مدفوع، إنشاء طلب دفع
+    const paymentSessionId = uuidv4();
+    
+    await execQuery(
+      `INSERT INTO payment_sessions (id, user_id, course_id, amount, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [paymentSessionId, req.session.user.id, courseId, course.price, 'pending', new Date()]
+    );
+
+    success(res, {
+      paymentRequired: true,
+      paymentSessionId: paymentSessionId,
+      amount: course.price,
+      courseTitle: course.title
+    }, 'يجب إتمام عملية الدفع');
+
+  } catch (error) {
+    logger.error('Enrollment error', error);
+    fail(res, 'حدث خطأ أثناء التسجيل في الكورس');
+  }
+});
+
 // تحديث تقدم الطالب
 app.post('/api/progress', requireLogin, async (req, res) => {
   try {
     const { courseId, lessonId, partId, completed } = req.body;
     
+    if (!courseId || !lessonId || !partId) {
+      return fail(res, 'معرف الكورس والدرس والجزء مطلوبون', 400);
+    }
+
     // الحصول على التسجيل الحالي
     const enrollment = await execQuery(
       'SELECT * FROM enrollments WHERE user_id = $1 AND course_id = $2',
@@ -354,7 +430,7 @@ app.post('/api/progress', requireLogin, async (req, res) => {
     );
 
     if (enrollment.length === 0) {
-      return res.status(404).json({ message: 'أنت غير مسجل في هذا الكورس' });
+      return fail(res, 'أنت غير مسجل في هذا الكورس', 404);
     }
 
     // تحديث التقدم
@@ -390,7 +466,8 @@ app.post('/api/progress', requireLogin, async (req, res) => {
     const completedParts = Object.values(progressData.lessons)
       .reduce((total, lesson) => total + lesson.completed_parts.length, 0);
 
-    const progress = Math.round((completedParts / totalParts[0].count) * 100);
+    const totalPartsCount = totalParts[0]?.count || 1;
+    const progress = Math.round((completedParts / totalPartsCount) * 100);
 
     // تحديث قاعدة البيانات
     await execQuery(
@@ -401,7 +478,7 @@ app.post('/api/progress', requireLogin, async (req, res) => {
     success(res, {
       progress: progress,
       completedParts: completedParts,
-      totalParts: totalParts[0].count
+      totalParts: totalPartsCount
     }, 'تم تحديث التقدم');
 
   } catch (error) {
@@ -449,7 +526,8 @@ app.post('/api/courses', requireLogin, async (req, res) => {
       `INSERT INTO courses (id, title, description, category, level, price, is_free, 
        requirements, objectives, instructor_id, published, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-      [courseId, title, description, category, level, price || 0, is_free || false,
+      [courseId, sanitizeInput(title), sanitizeInput(description), category, level, 
+       price || 0, is_free || false,
        JSON.stringify(requirements || []), JSON.stringify(objectives || []),
        req.session.user.id, false, new Date()]
     );
@@ -473,9 +551,13 @@ app.post('/api/login', async (req, res) => {
       return fail(res, 'البريد الإلكتروني وكلمة المرور مطلوبان', 400);
     }
 
+    if (!validateEmail(email)) {
+      return fail(res, 'صيغة البريد الإلكتروني غير صحيحة', 400);
+    }
+
     const users = await execQuery(
       'SELECT * FROM users WHERE email = $1 AND password_hash = $2',
-      [email, hashValue(password)]
+      [email.toLowerCase(), hashValue(password)]
     );
 
     if (users.length === 0) {
@@ -515,10 +597,18 @@ app.post('/api/register', async (req, res) => {
       return fail(res, 'جميع الحقول مطلوبة', 400);
     }
 
+    if (!validateEmail(email)) {
+      return fail(res, 'صيغة البريد الإلكتروني غير صحيحة', 400);
+    }
+
+    if (password.length < 6) {
+      return fail(res, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل', 400);
+    }
+
     // التحقق من عدم وجود المستخدم مسبقاً
     const existingUsers = await execQuery(
       'SELECT id FROM users WHERE email = $1 OR username = $2',
-      [email, username]
+      [email.toLowerCase(), sanitizeInput(username)]
     );
 
     if (existingUsers.length > 0) {
@@ -530,7 +620,7 @@ app.post('/api/register', async (req, res) => {
     await execQuery(
       `INSERT INTO users (id, username, email, password_hash, role, created_at)
        VALUES ($1, $2, $3, $4, $5, $6)`,
-      [userId, username, email, hashValue(password), role, new Date()]
+      [userId, sanitizeInput(username), email.toLowerCase(), hashValue(password), role, new Date()]
     );
 
     // تسجيل الدخول تلقائياً
@@ -538,25 +628,21 @@ app.post('/api/register', async (req, res) => {
     loginUser(req, newUser);
 
     // إرسال بريد ترحيبي
-    try {
-      await sendEmailSafe({
-        to: email,
-        subject: 'مرحباً بك في Elmahdy English!',
-        html: `
-          <div style="font-family: 'Cairo', Arial, sans-serif; direction: rtl; padding: 20px;">
-            <h2 style="color: #0056d6;">أهلاً وسهلاً بك في Elmahdy English! 🎉</h2>
-            <p><strong>اسم المستخدم:</strong> ${username}</p>
-            <p>نشكرك على انضمامك إلى منصتنا التعليمية.</p>
-            <p>يمكنك الآن استكشاف الكورسات والبدء في رحلتك التعليمية.</p>
-            <a href="${APP_URL}" style="background: #0056d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-              ابدأ التعلم الآن
-            </a>
-          </div>
-        `
-      });
-    } catch (emailError) {
-      logger.error('Failed to send welcome email:', emailError);
-    }
+    await sendEmailSafe({
+      to: email,
+      subject: 'مرحباً بك في Elmahdy English!',
+      html: `
+        <div style="font-family: 'Cairo', Arial, sans-serif; direction: rtl; padding: 20px;">
+          <h2 style="color: #0056d6;">أهلاً وسهلاً بك في Elmahdy English! 🎉</h2>
+          <p><strong>اسم المستخدم:</strong> ${username}</p>
+          <p>نشكرك على انضمامك إلى منصتنا التعليمية.</p>
+          <p>يمكنك الآن استكشاف الكورسات والبدء في رحلتك التعليمية.</p>
+          <a href="${APP_URL}" style="background: #0056d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            ابدأ التعلم الآن
+          </a>
+        </div>
+      `
+    });
 
     success(res, {
       user: newUser
@@ -568,6 +654,11 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+// الحصول على بيانات المستخدم الحالي
+app.get('/api/user/me', requireLogin, (req, res) => {
+  success(res, { user: req.session.user });
+});
+
 // ========= نظام المدفوعات =========
 
 // إنشاء جلسة دفع
@@ -575,23 +666,29 @@ app.post('/api/payment/create-session', requireLogin, async (req, res) => {
   try {
     const { courseId, paymentSessionId } = req.body;
     
-    // محاكاة عملية الدفع (في الإنتاج استخدم Stripe أو Paymob)
+    if (!paymentSessionId) {
+      return fail(res, 'معرف جلسة الدفع مطلوب', 400);
+    }
+
+    // التحقق من جلسة الدفع
     const paymentSession = await execQuery(
-      'SELECT * FROM payment_sessions WHERE id = $1 AND user_id = $2',
-      [paymentSessionId, req.session.user.id]
+      'SELECT * FROM payment_sessions WHERE id = $1 AND user_id = $2 AND status = $3',
+      [paymentSessionId, req.session.user.id, 'pending']
     );
 
     if (paymentSession.length === 0) {
-      return fail(res, 'جلسة الدفع غير موجودة', 404);
+      return fail(res, 'جلسة الدفع غير موجودة أو منتهية', 404);
     }
+
+    const session = paymentSession[0];
 
     // محاكاة الدفع الناجح
     const enrollmentId = uuidv4();
     
     await execQuery(
-      `INSERT INTO enrollments (id, user_id, course_id, enrolled_at, progress)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [enrollmentId, req.session.user.id, courseId, new Date(), 0]
+      `INSERT INTO enrollments (id, user_id, course_id, enrolled_at, progress, progress_data)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [enrollmentId, req.session.user.id, session.course_id, new Date(), 0, JSON.stringify({})]
     );
 
     // تحديث حالة الدفع
@@ -602,12 +699,64 @@ app.post('/api/payment/create-session', requireLogin, async (req, res) => {
 
     success(res, {
       enrollmentId: enrollmentId,
-      redirectUrl: `/course/${courseId}`
+      redirectUrl: `/course/${session.course_id}`
     }, 'تم الدفع والتسجيل في الكورس بنجاح');
 
   } catch (error) {
     logger.error('Payment error', error);
     fail(res, 'حدث خطأ أثناء عملية الدفع');
+  }
+});
+
+// ========= الإحصائيات والتقارير =========
+
+// إحصائيات النظام
+app.get('/api/stats', requireLogin, async (req, res) => {
+  try {
+    // التحقق من صلاحيات المدير
+    if (req.session.user.role !== 'admin') {
+      return fail(res, 'غير مصرح لك بالوصول للإحصائيات', 403);
+    }
+
+    const stats = await getSystemStats();
+    success(res, { stats });
+  } catch (error) {
+    logger.error('Get stats error', error);
+    fail(res, 'حدث خطأ في جلب الإحصائيات');
+  }
+});
+
+// إحصائيات المدرب
+app.get('/api/instructor/stats', requireLogin, async (req, res) => {
+  try {
+    if (req.session.user.role !== 'teacher') {
+      return fail(res, 'غير مصرح لك', 403);
+    }
+
+    const courses = await getInstructorCourses(req.session.user.id);
+    const totalStudents = await execQuery(`
+      SELECT COUNT(DISTINCT e.user_id) as count 
+      FROM enrollments e
+      JOIN courses c ON e.course_id = c.id
+      WHERE c.instructor_id = $1
+    `, [req.session.user.id]);
+
+    const revenue = await execQuery(`
+      SELECT COALESCE(SUM(ps.amount), 0) as total 
+      FROM payment_sessions ps
+      JOIN courses c ON ps.course_id = c.id
+      WHERE c.instructor_id = $1 AND ps.status = 'completed'
+    `, [req.session.user.id]);
+
+    success(res, {
+      totalCourses: courses.length,
+      totalStudents: parseInt(totalStudents[0].count),
+      totalRevenue: parseFloat(revenue[0].total),
+      courses: courses
+    });
+  } catch (error) {
+    logger.error('Get instructor stats error', error);
+    fail(res, 'حدث خطأ في جلب إحصائيات المدرب');
   }
 });
 
@@ -691,6 +840,7 @@ async function createEducationTables() {
         completed BOOLEAN DEFAULT FALSE,
         completed_at TIMESTAMP,
         progress_data JSONB DEFAULT '{}',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user_id, course_id)
       )
     `);
@@ -726,14 +876,21 @@ async function seedSampleData() {
       await execQuery(
         `INSERT INTO users (id, username, email, password_hash, role, bio) 
          VALUES ($1, $2, $3, $4, $5, $6)`,
-        [teacherId, 'teacher_ahmed', 'teacher@elmahdy-english.com', hashValue('password'), 'teacher', 'مدرس لغة إنجليزية محترف مع 10 سنوات خبرة']
+        [teacherId, 'teacher_ahmed', 'teacher@elmahdy-english.com', hashValue('password123'), 'teacher', 'مدرس لغة إنجليزية محترف مع 10 سنوات خبرة']
+      );
+
+      const adminId = uuidv4();
+      await execQuery(
+        `INSERT INTO users (id, username, email, password_hash, role) 
+         VALUES ($1, $2, $3, $4, $5)`,
+        [adminId, 'admin', 'admin@elmahdy-english.com', hashValue('admin123'), 'admin']
       );
 
       const studentId = uuidv4();
       await execQuery(
         `INSERT INTO users (id, username, email, password_hash, role) 
          VALUES ($1, $2, $3, $4, $5)`,
-        [studentId, 'student_mohamed', 'student@elmahdy-english.com', hashValue('password'), 'student']
+        [studentId, 'student_mohamed', 'student@elmahdy-english.com', hashValue('password123'), 'student']
       );
 
       // إضافة كورسات تجريبية
@@ -764,6 +921,11 @@ async function seedSampleData() {
     logger.error('❌ Error seeding sample data', error);
   }
 }
+
+// ====== صفحة الهبوط الأساسية ======
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // ====== تشغيل السيرفر ======
 app.listen(PORT, async () => {
