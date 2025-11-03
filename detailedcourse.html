@@ -4,43 +4,500 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تفاصيل الكورس - منصة التعليم</title>
-    <!-- نفس الـ styles -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #4A90E2;
+            --light-blue: #E3F2FD;
+            --accent-blue: #2196F3;
+            --dark-blue: #1976D2;
+            --text-dark: #333333;
+            --text-light: #666666;
+            --bg-light: #F8F9FA;
+            --border-light: #E0E0E0;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+        
+        /* Navbar Styles */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            box-shadow: var(--shadow);
+            padding: 1rem 0;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white !important;
+        }
+        
+        .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
+            font-weight: 500;
+            margin: 0 0.5rem;
+            transition: var(--transition);
+        }
+        
+        .navbar-nav .nav-link:hover,
+        .navbar-nav .nav-link.active {
+            color: white !important;
+            transform: translateY(-2px);
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            background-color: white;
+            border-left: 1px solid var(--border-light);
+            min-height: calc(100vh - 76px);
+            box-shadow: var(--shadow);
+            padding: 0;
+        }
+        
+        .user-info {
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            color: white;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        .user-info img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            margin-bottom: 1rem;
+        }
+        
+        .user-info h5 {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .wallet {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            margin-top: 1rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .sidebar .nav {
+            padding: 1rem 0;
+        }
+        
+        .sidebar .nav-item {
+            margin-bottom: 0.5rem;
+        }
+        
+        .sidebar .nav-link {
+            color: var(--text-dark);
+            padding: 0.75rem 1.5rem;
+            border-right: 3px solid transparent;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+        }
+        
+        .sidebar .nav-link i {
+            margin-left: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: var(--light-blue);
+            color: var(--primary-blue);
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: var(--light-blue);
+            color: var(--primary-blue);
+            border-right-color: var(--primary-blue);
+            font-weight: 600;
+        }
+        
+        /* Main Content Styles */
+        main {
+            padding: 2rem 1rem;
+        }
+        
+        .section-title {
+            color: var(--dark-blue);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--light-blue);
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-left: 0.5rem;
+        }
+        
+        /* Course Header */
+        .course-header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            color: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .course-header h1 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .course-header .course-description {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+        
+        .course-meta .badge {
+            margin-left: 0.5rem;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+        }
+        
+        .course-actions {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+        
+        .price-section h3 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .btn-enroll {
+            background: white;
+            color: var(--primary-blue);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            width: 100%;
+            font-weight: 600;
+            transition: var(--transition);
+            margin-bottom: 1.5rem;
+        }
+        
+        .btn-enroll:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-enroll.owned {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-enroll.expired {
+            background: var(--danger);
+            color: white;
+            cursor: not-allowed;
+        }
+        
+        .course-stats div {
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .course-stats i {
+            margin-left: 0.5rem;
+            width: 20px;
+        }
+        
+        /* Lessons Section */
+        .lessons-section, .description-section, .instructor-card, .requirements-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+        
+        .lesson-item {
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: var(--transition);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .lesson-item:hover {
+            border-color: var(--primary-blue);
+            background-color: var(--light-blue);
+        }
+        
+        .lesson-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .lesson-number {
+            background-color: var(--light-blue);
+            color: var(--primary-blue);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-left: 1rem;
+        }
+        
+        .lesson-duration {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        
+        .lesson-locked {
+            color: var(--text-light);
+        }
+        
+        .lesson-locked i {
+            margin-left: 0.5rem;
+        }
+        
+        /* Instructor Card */
+        .instructor-info {
+            text-align: center;
+            padding: 1rem 0;
+        }
+        
+        .instructor-info img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 1rem;
+            border: 3px solid var(--light-blue);
+        }
+        
+        .instructor-info h5 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .instructor-info p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        
+        /* Requirements Card */
+        .requirements-card ul {
+            padding-right: 1.5rem;
+            margin-bottom: 0;
+        }
+        
+        .requirements-card li {
+            margin-bottom: 0.5rem;
+            color: var(--text-light);
+        }
+        
+        /* Progress Bar */
+        .progress {
+            height: 8px;
+            margin-bottom: 1rem;
+            background-color: var(--border-light);
+        }
+        
+        .progress-bar {
+            background-color: var(--primary-blue);
+        }
+        
+        /* Loading Animation */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--light-blue);
+            border-top: 4px solid var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+                border-left: none;
+                border-bottom: 1px solid var(--border-light);
+            }
+            
+            .course-header {
+                padding: 1.5rem;
+            }
+            
+            .course-actions {
+                margin-top: 1.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- نفس الـ navbar -->
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-graduation-cap me-2"></i>منصة التعليم
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">الرئيسية</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/courses">الكورسات</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/dashboard">محاضراتي</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/profile">الملف الشخصي</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/notifications">
+                            <i class="fas fa-bell"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle"></i>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/profile">الملف الشخصي</a></li>
+                            <li><a class="dropdown-item" href="/settings">الإعدادات</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout">تسجيل الخروج</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-    <div class="container-fluid mt-5">
+    <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            <aside class="col-md-3 sidebar">
-                <!-- نفس الـ sidebar من courses.html -->
+            <aside class="col-md-3 col-lg-2 sidebar">
+                <div class="user-info">
+                    <img src="/images/avatar.png" alt="صورة المستخدم">
+                    <h5 id="userName">أحمد محمد</h5>
+                    <div class="wallet">
+                        <span>رصيدك</span>
+                        <span id="userBalance">250 ج.م</span>
+                    </div>
+                </div>
+                
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home"></i> الرئيسية
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/courses">
+                            <i class="fas fa-book-open"></i> الكورسات
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/dashboard">
+                            <i class="fas fa-play-circle"></i> محاضراتي
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/profile">
+                            <i class="fas fa-user"></i> الملف الشخصي
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/progress">
+                            <i class="fas fa-chart-line"></i> التقدم
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/certificates">
+                            <i class="fas fa-award"></i> الشهادات
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/support">
+                            <i class="fas fa-headset"></i> الدعم
+                        </a>
+                    </li>
+                </ul>
             </aside>
 
             <!-- المحتوى الرئيسي -->
-            <main class="col-md-9">
+            <main class="col-md-9 col-lg-10">
                 <div class="container py-4">
                     <!-- رأس الكورس -->
                     <div class="course-header mb-4">
                         <div class="row">
                             <div class="col-md-8">
                                 <h1 id="courseTitle">عنوان الكورس</h1>
-                                <p id="courseDescription">وصف الكورس</p>
+                                <p class="course-description" id="courseDescription">وصف الكورس</p>
                                 <div class="course-meta">
-                                    <span class="badge bg-primary" id="courseCategory">التصنيف</span>
-                                    <span class="badge bg-secondary" id="courseLevel">المستوى</span>
-                                    <span class="badge bg-success" id="courseDuration">المدة</span>
+                                    <span class="badge bg-light text-dark" id="courseCategory">التصنيف</span>
+                                    <span class="badge bg-light text-dark" id="courseLevel">المستوى</span>
+                                    <span class="badge bg-light text-dark" id="courseDuration">المدة</span>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="course-actions">
                                     <div class="price-section mb-3">
                                         <h3 id="coursePrice">السعر</h3>
-                                        <button class="btn btn-primary w-100" id="enrollButton">اشترك الآن</button>
+                                        <button class="btn-enroll" id="enrollButton">اشترك الآن</button>
                                     </div>
                                     <div class="course-stats">
-                                        <div><i class="bi bi-people"></i> <span id="studentsCount">0</span> طالب</div>
-                                        <div><i class="bi bi-play-circle"></i> <span id="lessonsCount">0</span> درس</div>
-                                        <div><i class="bi bi-star"></i> <span id="courseRating">0</span> تقييم</div>
+                                        <div><i class="fas fa-users"></i> <span id="studentsCount">0</span> طالب</div>
+                                        <div><i class="fas fa-play-circle"></i> <span id="lessonsCount">0</span> درس</div>
+                                        <div><i class="fas fa-star"></i> <span id="courseRating">0</span> تقييم</div>
                                     </div>
                                 </div>
                             </div>
@@ -50,17 +507,29 @@
                     <!-- محتوى الكورس -->
                     <div class="row">
                         <div class="col-md-8">
+                            <!-- تقدم الكورس -->
+                            <div class="progress-section mb-4" id="progressSection" style="display: none;">
+                                <h4 class="section-title">تقدمك في الكورس</h4>
+                                <div class="progress">
+                                    <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <p class="text-muted" id="progressText">0% مكتمل</p>
+                            </div>
+
                             <!-- قائمة الدروس -->
                             <div class="lessons-section">
-                                <h3>📖 محتوى الكورس</h3>
+                                <h3 class="section-title"><i class="fas fa-book-open"></i> محتوى الكورس</h3>
                                 <div id="lessonsContainer">
                                     <!-- سيتم تعبئة الدروس هنا -->
+                                    <div class="loading">
+                                        <div class="spinner"></div>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- وصف مفصل -->
                             <div class="description-section mt-4">
-                                <h3>📝 عن الكورس</h3>
+                                <h3 class="section-title"><i class="fas fa-info-circle"></i> عن الكورس</h3>
                                 <div id="fullDescription"></div>
                             </div>
                         </div>
@@ -68,9 +537,9 @@
                         <div class="col-md-4">
                             <!-- معلومات المدرب -->
                             <div class="instructor-card">
-                                <h4>👨‍🏫 المدرب</h4>
+                                <h4 class="section-title"><i class="fas fa-chalkboard-teacher"></i> المدرب</h4>
                                 <div class="instructor-info">
-                                    <img id="instructorImage" src="" alt="صورة المدرب">
+                                    <img id="instructorImage" src="" alt="صورة المدرب" class="img-fluid">
                                     <h5 id="instructorName">اسم المدرب</h5>
                                     <p id="instructorBio">نبذة عن المدرب</p>
                                 </div>
@@ -78,8 +547,14 @@
 
                             <!-- متطلبات الكورس -->
                             <div class="requirements-card mt-3">
-                                <h4>⚡ المتطلبات</h4>
+                                <h4 class="section-title"><i class="fas fa-tasks"></i> المتطلبات</h4>
                                 <ul id="requirementsList"></ul>
+                            </div>
+
+                            <!-- ما ستتعلمه -->
+                            <div class="requirements-card mt-3">
+                                <h4 class="section-title"><i class="fas fa-graduation-cap"></i> ما ستتعلمه</h4>
+                                <ul id="learningOutcomesList"></ul>
                             </div>
                         </div>
                     </div>
@@ -88,12 +563,84 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // بيانات المستخدم الحالي
+        const currentUser = {
+            id: 1,
+            name: "أحمد محمد",
+            balance: 250,
+            purchasedCourses: [
+                { courseId: 1, expiryDate: "2024-12-31", progress: 35 },
+                { courseId: 4, expiryDate: "2023-10-15", progress: 80 }, // منتهي الصلاحية
+                { courseId: 5, expiryDate: "2024-08-20", progress: 10 }
+            ]
+        };
+
+        // بيانات تجريبية للكورس
+        const sampleCourse = {
+            id: 1,
+            title: "تعلم تطوير الويب باستخدام HTML و CSS",
+            description: "كورس متكامل لتعلم أساسيات تطوير الويب باستخدام HTML و CSS من الصفر حتى الاحتراف",
+            fullDescription: `
+                <p>في هذا الكورس الشامل، ستتعلم أساسيات تطوير الويب باستخدام HTML و CSS من الصفر. ستبدأ رحلتك بتعلم أساسيات HTML لإنشاء هيكل الصفحة، ثم تنتقل إلى CSS لتنسيق وتصميم الصفحات بشكل احترافي.</p>
+                <p>سنتعرف على:</p>
+                <ul>
+                    <li>أساسيات HTML والعناصر الأساسية</li>
+                    <li>تنسيق النصوص والعناصر باستخدام CSS</li>
+                    <li>إنشاء تخطيطات متجاوبة باستخدام Flexbox و Grid</li>
+                    <li>إضافة تأثيرات وتحسينات باستخدام CSS3</li>
+                    <li>مبادئ التصميم الحديثة وتجربة المستخدم</li>
+                </ul>
+                <p>بنهاية هذا الكورس، ستكون قادرًا على إنشاء مواقع ويب متكاملة وجذابة من الصفر.</p>
+            `,
+            instructor: {
+                name: "أحمد علي",
+                bio: "مطور ويب محترف بخبرة تزيد عن 8 سنوات في مجال تطوير الويب والتصميم. عمل مع العديد من الشركات المحلية والعالمية وساعد المئات من الطلاب على بدء مسيرتهم في مجال البرمجة.",
+                image: "https://via.placeholder.com/150/4A90E2/FFFFFF?text=Instructor"
+            },
+            category: "برمجة",
+            level: "مبتدئ",
+            duration: "12 ساعة",
+            price: 0,
+            rating: 4.8,
+            students: 1250,
+            lessons: [
+                { id: 1, title: "مقدمة في HTML", duration: "45 دقيقة", isPreview: true, isCompleted: true },
+                { id: 2, title: "العناصر الأساسية في HTML", duration: "60 دقيقة", isPreview: false, isCompleted: true },
+                { id: 3, title: "الجداول والقوائم", duration: "50 دقيقة", isPreview: false, isCompleted: false },
+                { id: 4, title: "مقدمة في CSS", duration: "55 دقيقة", isPreview: true, isCompleted: false },
+                { id: 5, title: "تحديد العناصر باستخدام CSS", duration: "65 دقيقة", isPreview: false, isCompleted: false },
+                { id: 6, title: "نماذج HTML المتقدمة", duration: "70 دقيقة", isPreview: false, isCompleted: false },
+                { id: 7, title: "التخطيط باستخدام Flexbox", duration: "80 دقيقة", isPreview: false, isCompleted: false },
+                { id: 8, title: "التخطيط باستخدام CSS Grid", duration: "75 دقيقة", isPreview: false, isCompleted: false },
+                { id: 9, title: "التصميم المتجاوب", duration: "85 دقيقة", isPreview: false, isCompleted: false },
+                { id: 10, title: "مشروع نهائي", duration: "120 دقيقة", isPreview: false, isCompleted: false }
+            ],
+            requirements: [
+                "جهاز كمبيوتر يعمل بنظام Windows أو Mac",
+                "اتصال بالإنترنت",
+                "محرر نصوص (سيتم شرح التثبيت في الكورس)",
+                "لا توجد خبرة مسبقة في البرمجة مطلوبة"
+            ],
+            learningOutcomes: [
+                "إنشاء صفحات ويب باستخدام HTML",
+                "تنسيق وتصميم الصفحات باستخدام CSS",
+                "بناء تخطيطات متجاوبة تعمل على جميع الأجهزة",
+                "إضافة تأثيرات وتحسينات باستخدام CSS3",
+                "فهم مبادئ تجربة المستخدم والتصميم الحديث"
+            ]
+        };
+
         // دوال جلب وعرض تفاصيل الكورس
         async function loadCourseDetails(courseId) {
             try {
-                const res = await fetch(`/api/courses/${courseId}`);
-                const course = await res.json();
+                // محاكاة جلب البيانات من API
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // في التطبيق الحقيقي، سيتم استبدال هذا بجلب البيانات من قاعدة البيانات
+                const course = sampleCourse;
+                
                 renderCourseDetails(course);
             } catch (error) {
                 console.error('Error loading course details:', error);
@@ -101,17 +648,153 @@
         }
 
         function renderCourseDetails(course) {
+            // تحديث معلومات الكورس الأساسية
             document.getElementById('courseTitle').textContent = course.title;
             document.getElementById('courseDescription').textContent = course.description;
-            // ... تعبئة بقية العناصر
+            document.getElementById('courseCategory').textContent = course.category;
+            document.getElementById('courseLevel').textContent = course.level;
+            document.getElementById('courseDuration').textContent = course.duration;
+            document.getElementById('coursePrice').textContent = course.price === 0 ? 'مجاني' : `${course.price} ج.م`;
+            document.getElementById('studentsCount').textContent = course.students.toLocaleString();
+            document.getElementById('lessonsCount').textContent = course.lessons.length;
+            document.getElementById('courseRating').textContent = course.rating;
+            document.getElementById('fullDescription').innerHTML = course.fullDescription;
+            
+            // تحديث معلومات المدرب
+            document.getElementById('instructorName').textContent = course.instructor.name;
+            document.getElementById('instructorBio').textContent = course.instructor.bio;
+            document.getElementById('instructorImage').src = course.instructor.image;
+            document.getElementById('instructorImage').alt = `صورة ${course.instructor.name}`;
+            
+            // تحديث المتطلبات
+            const requirementsList = document.getElementById('requirementsList');
+            requirementsList.innerHTML = course.requirements.map(req => `<li>${req}</li>`).join('');
+            
+            // تحديث ما سيتعلمه المستخدم
+            const learningOutcomesList = document.getElementById('learningOutcomesList');
+            learningOutcomesList.innerHTML = course.learningOutcomes.map(outcome => `<li>${outcome}</li>`).join('');
+            
+            // تحديث حالة الاشتراك والزر
+            updateEnrollmentStatus(course.id);
+            
+            // عرض الدروس
+            renderLessons(course.lessons, course.id);
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const courseId = urlParams.get('id');
-            if (courseId) {
-                loadCourseDetails(courseId);
+        // دالة للتحقق من حالة الكورس بالنسبة للمستخدم
+        function getCourseStatus(courseId) {
+            const purchasedCourse = currentUser.purchasedCourses.find(pc => pc.courseId === courseId);
+            
+            if (!purchasedCourse) {
+                return { status: 'not_purchased' };
             }
+            
+            const expiryDate = new Date(purchasedCourse.expiryDate);
+            const today = new Date();
+            
+            if (expiryDate < today) {
+                return { status: 'expired', expiryDate: purchasedCourse.expiryDate, progress: purchasedCourse.progress };
+            }
+            
+            return { status: 'owned', expiryDate: purchasedCourse.expiryDate, progress: purchasedCourse.progress };
+        }
+
+        function updateEnrollmentStatus(courseId) {
+            const courseStatus = getCourseStatus(courseId);
+            const enrollButton = document.getElementById('enrollButton');
+            const progressSection = document.getElementById('progressSection');
+            
+            switch(courseStatus.status) {
+                case 'owned':
+                    enrollButton.textContent = 'استمر في التعلم';
+                    enrollButton.className = 'btn-enroll owned';
+                    progressSection.style.display = 'block';
+                    document.getElementById('progressBar').style.width = `${courseStatus.progress}%`;
+                    document.getElementById('progressText').textContent = `${courseStatus.progress}% مكتمل`;
+                    break;
+                case 'expired':
+                    enrollButton.textContent = 'منتهي الصلاحية';
+                    enrollButton.className = 'btn-enroll expired';
+                    enrollButton.disabled = true;
+                    progressSection.style.display = 'block';
+                    document.getElementById('progressBar').style.width = `${courseStatus.progress}%`;
+                    document.getElementById('progressText').textContent = `${courseStatus.progress}% مكتمل (منتهي الصلاحية)`;
+                    break;
+                default:
+                    const course = sampleCourse;
+                    enrollButton.textContent = course.price === 0 ? 'ابدأ التعلم مجاناً' : `اشترك الآن - ${course.price} ج.م`;
+                    enrollButton.className = 'btn-enroll';
+                    progressSection.style.display = 'none';
+                    break;
+            }
+        }
+
+        function renderLessons(lessons, courseId) {
+            const container = document.getElementById('lessonsContainer');
+            const courseStatus = getCourseStatus(courseId);
+            
+            container.innerHTML = lessons.map((lesson, index) => {
+                const isLocked = courseStatus.status !== 'owned' && !lesson.isPreview;
+                const isCompleted = courseStatus.status === 'owned' && lesson.isCompleted;
+                
+                return `
+                    <div class="lesson-item ${isCompleted ? 'border-success' : ''}">
+                        <div class="lesson-info">
+                            <div class="lesson-number">${index + 1}</div>
+                            <div>
+                                <h6 class="mb-1 ${isLocked ? 'text-muted' : ''}">${lesson.title}</h6>
+                                <small class="lesson-duration">${lesson.duration}</small>
+                                ${lesson.isPreview ? '<span class="badge bg-info me-2">عينة مجانية</span>' : ''}
+                                ${isCompleted ? '<span class="badge bg-success">مكتمل</span>' : ''}
+                            </div>
+                        </div>
+                        <div>
+                            ${isLocked ? 
+                                '<span class="lesson-locked"><i class="fas fa-lock"></i> مقفل</span>' : 
+                                '<button class="btn btn-sm btn-outline-primary">شاهد الآن</button>'
+                            }
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // التعامل مع زر الاشتراك
+        document.getElementById('enrollButton').addEventListener('click', function() {
+            const courseStatus = getCourseStatus(sampleCourse.id);
+            const course = sampleCourse;
+            
+            switch(courseStatus.status) {
+                case 'not_purchased':
+                    if (course.price === 0) {
+                        alert(`تم اشتراكك في كورس "${course.title}" بنجاح!`);
+                        // هنا يمكن إضافة منطق إضافي لتحديث حالة المستخدم
+                        window.location.href = `/course/player?id=${course.id}`;
+                    } else {
+                        alert(`سيتم تحويلك لصفحة الدفع لشراء كورس "${course.title}"`);
+                        // هنا يمكن إضافة منطق إضافي للدفع
+                    }
+                    break;
+                case 'owned':
+                    alert(`سيتم تحويلك لاستكمال كورس "${course.title}"`);
+                    window.location.href = `/course/player?id=${course.id}`;
+                    break;
+                case 'expired':
+                    alert('هذا الكورس منتهي الصلاحية، يرجى تجديد الاشتراك');
+                    break;
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // تحديث بيانات المستخدم في الواجهة
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userBalance').textContent = `${currentUser.balance} ج.م`;
+            
+            // جلب معرف الكورس من URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const courseId = urlParams.get('id') || 1; // استخدام 1 كقيمة افتراضية للعرض
+            
+            loadCourseDetails(courseId);
         });
     </script>
 </body>
