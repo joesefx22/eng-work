@@ -1,1 +1,129 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جميع الكورسات - منصة التعليم</title>
+    <!-- نفس الـ styles من index.html -->
+</head>
+<body>
+    <!-- نفس الـ navbar من index.html -->
 
+    <div class="container-fluid mt-5">
+        <div class="row">
+            <!-- Sidebar -->
+            <aside class="col-md-3 sidebar">
+                <div class="user-info">
+                    <img src="/images/avatar.png" alt="صورة المستخدم">
+                    <h5 id="userName">اسم المستخدم</h5>
+                    <div class="wallet">
+                        <span>رصيدك</span>
+                        <span id="userBalance">0 ج.م</span>
+                    </div>
+                </div>
+                
+                <ul class="nav flex-column">
+                    <li class="nav-item"><a class="nav-link" href="/">الرئيسية</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/courses">الكورسات</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/dashboard">محاضراتي</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/profile">الملف الشخصي</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/progress">التقدم</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/certificates">الشهادات</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/support">الدعم</a></li>
+                </ul>
+            </aside>
+
+            <!-- المحتوى الرئيسي -->
+            <main class="col-md-9">
+                <div class="container py-4">
+                    <h2 class="section-title">📚 جميع الكورسات</h2>
+                    
+                    <!-- فلترة متقدمة -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="searchAllCourses" placeholder="ابحث في الكورسات...">
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="categoryFilterAll">
+                                <option value="">جميع التصنيفات</option>
+                                <option value="programming">برمجة</option>
+                                <option value="design">تصميم</option>
+                                <option value="marketing">تسويق</option>
+                                <option value="language">لغات</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="levelFilterAll">
+                                <option value="">جميع المستويات</option>
+                                <option value="beginner">مبتدئ</option>
+                                <option value="intermediate">متوسط</option>
+                                <option value="advanced">متقدم</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="priceFilter">
+                                <option value="">جميع الأسعار</option>
+                                <option value="free">مجاني فقط</option>
+                                <option value="paid">مدفوع فقط</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="sortFilter">
+                                <option value="newest">الأحدث</option>
+                                <option value="popular">الأكثر شعبية</option>
+                                <option value="rating">الأعلى تقييماً</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row" id="allCoursesContainer">
+                        <!-- سيتم تعبئة الكورسات هنا -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // دوال جلب وعرض الكورسات
+        async function loadAllCourses(filters = {}) {
+            try {
+                const params = new URLSearchParams();
+                Object.keys(filters).forEach(key => {
+                    if (filters[key]) params.append(key, filters[key]);
+                });
+
+                const res = await fetch(`/api/courses/all?${params}`);
+                const courses = await res.json();
+                renderAllCourses(courses);
+            } catch (error) {
+                console.error('Error loading courses:', error);
+                renderDefaultCourses();
+            }
+        }
+
+        function renderAllCourses(courses) {
+            const container = document.getElementById('allCoursesContainer');
+            // استخدام نفس دالة renderCourses من index.html مع تعديلات بسيطة
+        }
+
+        // إعداد الفلاتر
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllCourses();
+            
+            const filters = {};
+            const filterElements = [
+                'searchAllCourses', 'categoryFilterAll', 'levelFilterAll', 
+                'priceFilter', 'sortFilter'
+            ];
+
+            filterElements.forEach(elementId => {
+                document.getElementById(elementId).addEventListener('change', function() {
+                    filters[elementId] = this.value;
+                    loadAllCourses(filters);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
