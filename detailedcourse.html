@@ -1,1 +1,118 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل الكورس - منصة التعليم</title>
+    <!-- نفس الـ styles -->
+</head>
+<body>
+    <!-- نفس الـ navbar -->
 
+    <div class="container-fluid mt-5">
+        <div class="row">
+            <!-- Sidebar -->
+            <aside class="col-md-3 sidebar">
+                <!-- نفس الـ sidebar من courses.html -->
+            </aside>
+
+            <!-- المحتوى الرئيسي -->
+            <main class="col-md-9">
+                <div class="container py-4">
+                    <!-- رأس الكورس -->
+                    <div class="course-header mb-4">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h1 id="courseTitle">عنوان الكورس</h1>
+                                <p id="courseDescription">وصف الكورس</p>
+                                <div class="course-meta">
+                                    <span class="badge bg-primary" id="courseCategory">التصنيف</span>
+                                    <span class="badge bg-secondary" id="courseLevel">المستوى</span>
+                                    <span class="badge bg-success" id="courseDuration">المدة</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="course-actions">
+                                    <div class="price-section mb-3">
+                                        <h3 id="coursePrice">السعر</h3>
+                                        <button class="btn btn-primary w-100" id="enrollButton">اشترك الآن</button>
+                                    </div>
+                                    <div class="course-stats">
+                                        <div><i class="bi bi-people"></i> <span id="studentsCount">0</span> طالب</div>
+                                        <div><i class="bi bi-play-circle"></i> <span id="lessonsCount">0</span> درس</div>
+                                        <div><i class="bi bi-star"></i> <span id="courseRating">0</span> تقييم</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- محتوى الكورس -->
+                    <div class="row">
+                        <div class="col-md-8">
+                            <!-- قائمة الدروس -->
+                            <div class="lessons-section">
+                                <h3>📖 محتوى الكورس</h3>
+                                <div id="lessonsContainer">
+                                    <!-- سيتم تعبئة الدروس هنا -->
+                                </div>
+                            </div>
+
+                            <!-- وصف مفصل -->
+                            <div class="description-section mt-4">
+                                <h3>📝 عن الكورس</h3>
+                                <div id="fullDescription"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <!-- معلومات المدرب -->
+                            <div class="instructor-card">
+                                <h4>👨‍🏫 المدرب</h4>
+                                <div class="instructor-info">
+                                    <img id="instructorImage" src="" alt="صورة المدرب">
+                                    <h5 id="instructorName">اسم المدرب</h5>
+                                    <p id="instructorBio">نبذة عن المدرب</p>
+                                </div>
+                            </div>
+
+                            <!-- متطلبات الكورس -->
+                            <div class="requirements-card mt-3">
+                                <h4>⚡ المتطلبات</h4>
+                                <ul id="requirementsList"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // دوال جلب وعرض تفاصيل الكورس
+        async function loadCourseDetails(courseId) {
+            try {
+                const res = await fetch(`/api/courses/${courseId}`);
+                const course = await res.json();
+                renderCourseDetails(course);
+            } catch (error) {
+                console.error('Error loading course details:', error);
+            }
+        }
+
+        function renderCourseDetails(course) {
+            document.getElementById('courseTitle').textContent = course.title;
+            document.getElementById('courseDescription').textContent = course.description;
+            // ... تعبئة بقية العناصر
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const courseId = urlParams.get('id');
+            if (courseId) {
+                loadCourseDetails(courseId);
+            }
+        });
+    </script>
+</body>
+</html>
