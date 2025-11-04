@@ -105,10 +105,17 @@ const authLimiter = rateLimit({
   skipSuccessfulRequests: true
 });
 
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'عدد محاولات الدفع كبير جداً، حاول بعد 15 دقيقة'
+});
+
 app.use(generalLimiter);
 app.use('/api/login', authLimiter);
 app.use('/api/register', authLimiter);
 app.use('/api/forgot-password', authLimiter);
+app.use('/api/payment', paymentLimiter);
 
 // ====== إعداد الجلسات ======
 app.use(
@@ -1072,6 +1079,322 @@ async function exportCourseData(courseId) {
   };
 }
 
+// ====== نظام الأكواد والخصومات ======
+
+const CODE_TYPES = {
+  COURSE: 'course',
+  PREMIUM: 'premium',
+  COMPENSATION: 'compensation'
+};
+
+const CODE_SOURCES = {
+  ADMIN: 'admin',
+  INSTRUCTOR: 'instructor',
+  CANCELLATION: 'cancellation'
+};
+
+/**
+ * @function generateDiscountCode
+ * @description توليد كود خصم
+ */
+function generateDiscountCode(length = 8) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+/**
+ * @function generateVoucherCode
+ * @description توليد كود فيoucher
+ */
+function generateVoucherCode(prefix = 'VC') {
+  return prefix + '-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+}
+
+/**
+ * @function validateVoucher
+ * @description التحقق من صحة الكود
+ */
+async function validateVoucher(code, courseId = null) {
+  try {
+    if (!code) {
+      return { valid: false, message: 'الكود مطلوب' };
+    }
+
+    // التحقق من قاعدة البيانات
+    const vouchers = await execQuery(
+      'SELECT * FROM voucher_codes WHERE code = $1 AND is_used = FALSE',
+      [code.toUpperCase()]
+    );
+
+    if (vouchers.length > 0) {
+      const voucher = vouchers[0];
+      
+      // التحقق من الصلاحية
+      const now = new Date();
+      if (voucher.expires_at && new Date(voucher.expires_at) < now) {
+        return { valid: false, message: 'الكود منتهي الصلاحية' };
+      }
+
+      return { 
+        valid: true, 
+        value: voucher.value,
+        type: voucher.type,
+        message: 'الكود صالح!'
+      };
+    }
+
+    // أكواد تجريبية للاختبار
+    const validVouchers = {
+      'TEST50': 50,
+      'TEST100': 100,
+      'TEST150': 150,
+      'ELMAHDY50': 50,
+      'ELMAHDY100': 100
+    };
+    
+    if (validVouchers[code]) {
+      return { 
+        valid: true, 
+        value: validVouchers[code],
+        type: 'TEST',
+        message: 'الكود صالح!'
+      };
+    }
+
+    return { valid: false, message: 'الكود غير صالح أو منتهي الصلاحية' };
+  } catch (error) {
+    logger.error('Validate voucher error:', error);
+    return { valid: false, message: 'خطأ في التحقق من الكود' };
+  }
+}
+
+// ====== نظام الدفع Paymob ======
+
+class PaymobService {
+  constructor() {
+    this.apiKey = process.env.PAYMOB_API_KEY;
+    this.integrationId = process.env.PAYMOB_CARD_INTEGRATION_ID;
+    this.iframeId = process.env.PAYMOB_IFRAME_ID;
+    this.hmacSecret = process.env.PAYMOB_HMAC_SECRET;
+    this.baseUrl = 'https://accept.paymob.com/api';
+  }
+
+  /**
+   * @function authenticate
+   * @description الحصول على توكن المصادقة من Paymob
+   */
+  async authenticate() {
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/tokens`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: this.apiKey
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'فشل في المصادقة مع Paymob');
+      }
+
+      return data.token;
+    } catch (error) {
+      logger.error('Paymob authentication error:', error);
+      throw new Error('فشل في الاتصال بخدمة الدفع');
+    }
+  }
+
+  /**
+   * @function createOrder
+   * @description إنشاء طلب دفع
+   */
+  async createOrder(authToken, amount, courseTitle, courseId) {
+    try {
+      const response = await fetch(`${this.baseUrl}/ecommerce/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          auth_token: authToken,
+          delivery_needed: false,
+          amount_cents: Math.round(amount * 100), // تحويل لـ cents
+          currency: "EGP",
+          items: [
+            {
+              name: courseTitle,
+              amount_cents: Math.round(amount * 100),
+              description: `كورس ${courseTitle}`,
+              quantity: 1
+            }
+          ],
+          merchant_order_id: courseId
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'فشل في إنشاء طلب الدفع');
+      }
+
+      return data;
+    } catch (error) {
+      logger.error('Paymob create order error:', error);
+      throw new Error('فشل في إنشاء طلب الدفع');
+    }
+  }
+
+  /**
+   * @function createPaymentKey
+   * @description إنشاء مفتاح دفع
+   */
+  async createPaymentKey(authToken, orderId, amount, userData, courseId) {
+    try {
+      const response = await fetch(`${this.baseUrl}/acceptance/payment_keys`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          auth_token: authToken,
+          amount_cents: Math.round(amount * 100),
+          expiration: 3600, // ساعة واحدة
+          order_id: orderId,
+          billing_data: {
+            apartment: "NA", 
+            email: userData.email,
+            floor: "NA", 
+            first_name: userData.username,
+            street: "NA", 
+            building: "NA", 
+            phone_number: userData.phone || "01000000000",
+            shipping_method: "NA", 
+            postal_code: "NA", 
+            city: "NA", 
+            country: "NA", 
+            last_name: "NA"
+          },
+          currency: "EGP",
+          integration_id: this.integrationId,
+          lock_order_when_paid: false
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'فشل في إنشاء مفتاح الدفع');
+      }
+
+      return data.token;
+    } catch (error) {
+      logger.error('Paymob create payment key error:', error);
+      throw new Error('فشل في إنشاء مفتاح الدفع');
+    }
+  }
+
+  /**
+   * @function verifyPayment
+   * @description التحقق من عملية الدفع
+   */
+  async verifyPayment(transactionId) {
+    try {
+      const response = await fetch(`${this.baseUrl}/acceptance/transactions/${transactionId}/verify`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'فشل في التحقق من الدفع');
+      }
+
+      return data;
+    } catch (error) {
+      logger.error('Paymob verify payment error:', error);
+      throw new Error('فشل في التحقق من عملية الدفع');
+    }
+  }
+
+  /**
+   * @function createPaymentSession
+   * @description إنشاء جلسة دفع كاملة
+   */
+  async createPaymentSession(courseData, userData, voucherCodes = []) {
+    try {
+      // حساب المبلغ النهائي بعد الخصومات
+      let finalAmount = courseData.price;
+      let totalDiscount = 0;
+
+      // التحقق من الأكواد إذا موجودة
+      if (voucherCodes.length > 0) {
+        for (const code of voucherCodes) {
+          const voucher = await validateVoucher(code, courseData.id);
+          if (voucher.valid) {
+            totalDiscount += voucher.value;
+          }
+        }
+        finalAmount = Math.max(0, finalAmount - totalDiscount);
+      }
+
+      // إذا كان المبلغ النهائي صفر، لا حاجة للدفع
+      if (finalAmount === 0) {
+        return {
+          success: true,
+          noPaymentNeeded: true,
+          finalAmount: 0,
+          totalDiscount: totalDiscount
+        };
+      }
+
+      // إنشاء جلسة دفع مع Paymob
+      const authToken = await this.authenticate();
+      const order = await this.createOrder(authToken, finalAmount, courseData.title, courseData.id);
+      const paymentToken = await this.createPaymentKey(authToken, order.id, finalAmount, userData, courseData.id);
+
+      return {
+        success: true,
+        paymentToken: paymentToken,
+        orderId: order.id,
+        finalAmount: finalAmount,
+        totalDiscount: totalDiscount,
+        iframeUrl: `https://accept.paymob.com/api/acceptance/iframes/${this.iframeId}?payment_token=${paymentToken}`
+      };
+    } catch (error) {
+      logger.error('Create payment session error:', error);
+      throw error;
+    }
+  }
+}
+
+// إنشاء instance من خدمة Paymob
+const paymobService = new PaymobService();
+
+// ====== دوال المعاملات ======
+
+/**
+ * @function withTransaction
+ * @description تنفيذ استعلامات ضمن معاملة
+ */
+async function withTransaction(callback) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await callback(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 // ====== دالة ثابتة لتوليد رابط التطبيق ======
 const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
 
@@ -1239,16 +1562,19 @@ app.get('/api/courses/:id', async (req, res) => {
   }
 });
 
-// التسجيل في كورس مع التحقق من الصحة
-app.post('/api/enroll', 
+// ========= نظام الدفع مع Paymob =========
+
+// إنشاء جلسة دفع مع Paymob
+app.post('/api/payment/create-session', 
   requireLogin,
   validateInput([
-    body('courseId').isUUID().withMessage('معرف الكورس غير صالح')
+    body('courseId').isUUID().withMessage('معرف الكورس غير صالح'),
+    body('voucherCodes').optional().isArray().withMessage('يجب أن تكون الأكواد مصفوفة')
   ]),
   async (req, res) => {
     try {
-      const { courseId } = req.body;
-      
+      const { courseId, voucherCodes = [] } = req.body;
+
       // التحقق من وجود الكورس
       const courses = await execQuery('SELECT * FROM courses WHERE id = $1 AND published = true', [courseId]);
       if (courses.length === 0) {
@@ -1269,27 +1595,130 @@ app.post('/api/enroll',
 
       // إذا كان الكورس مجاني، التسجيل مباشرة
       if (course.is_free || course.price === 0) {
+        return await enrollUserDirectly(req, res, courseId, course);
+      }
+
+      // إنشاء جلسة دفع مع Paymob
+      const userData = {
+        id: req.session.user.id,
+        email: req.session.user.email,
+        username: req.session.user.username,
+        phone: req.session.user.phone
+      };
+
+      const paymentSession = await paymobService.createPaymentSession(course, userData, voucherCodes);
+
+      if (paymentSession.noPaymentNeeded) {
+        // إذا كان المبلغ النهائي صفر بعد الخصم، التسجيل مباشرة
+        return await enrollUserDirectly(req, res, courseId, course, voucherCodes);
+      }
+
+      // حفظ جلسة الدفع في قاعدة البيانات
+      const paymentSessionId = uuidv4();
+      await execQuery(
+        `INSERT INTO payment_sessions (id, user_id, course_id, amount, status, payment_token, order_id, voucher_codes, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [
+          paymentSessionId, 
+          req.session.user.id, 
+          courseId, 
+          paymentSession.finalAmount,
+          'pending',
+          paymentSession.paymentToken,
+          paymentSession.orderId,
+          JSON.stringify(voucherCodes),
+          new Date()
+        ]
+      );
+
+      success(res, {
+        paymentRequired: true,
+        paymentSessionId: paymentSessionId,
+        paymentToken: paymentSession.paymentToken,
+        iframeUrl: paymentSession.iframeUrl,
+        amount: paymentSession.finalAmount,
+        totalDiscount: paymentSession.totalDiscount,
+        courseTitle: course.title
+      }, 'يجب إتمام عملية الدفع');
+
+    } catch (error) {
+      logger.error('Create payment session error', error);
+      fail(res, error.message || 'حدث خطأ أثناء إنشاء جلسة الدفع');
+    }
+  }
+);
+
+// تأكيد الدفع من Paymob
+app.post('/api/payment/confirm', 
+  requireLogin,
+  validateInput([
+    body('paymentSessionId').isUUID().withMessage('معرف جلسة الدفع غير صالح'),
+    body('transactionId').notEmpty().withMessage('معرف المعاملة مطلوب')
+  ]),
+  async (req, res) => {
+    try {
+      const { paymentSessionId, transactionId } = req.body;
+
+      // التحقق من جلسة الدفع
+      const paymentSessions = await execQuery(
+        'SELECT * FROM payment_sessions WHERE id = $1 AND user_id = $2 AND status = $3',
+        [paymentSessionId, req.session.user.id, 'pending']
+      );
+
+      if (paymentSessions.length === 0) {
+        return fail(res, 'جلسة الدفع غير موجودة أو منتهية', 404);
+      }
+
+      const paymentSession = paymentSessions[0];
+
+      // التحقق من الدفع مع Paymob
+      const paymentResult = await paymobService.verifyPayment(transactionId);
+
+      if (paymentResult.success && paymentResult.data.status === 'approved') {
+        // التسجيل في الكورس
         const enrollmentId = uuidv4();
         
-        await execQuery(
-          `INSERT INTO enrollments (id, user_id, course_id, enrolled_at, progress, progress_data)
-           VALUES ($1, $2, $3, $4, $5, $6)`,
-          [enrollmentId, req.session.user.id, courseId, new Date(), 0, JSON.stringify({})]
-        );
+        await withTransaction(async (client) => {
+          // إنشاء التسجيل
+          await client.query(
+            `INSERT INTO enrollments (id, user_id, course_id, enrolled_at, progress, progress_data)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [enrollmentId, req.session.user.id, paymentSession.course_id, new Date(), 0, JSON.stringify({})]
+          );
+
+          // تحديث حالة الدفع
+          await client.query(
+            'UPDATE payment_sessions SET status = $1, transaction_id = $2, completed_at = $3 WHERE id = $4',
+            ['completed', transactionId, new Date(), paymentSessionId]
+          );
+
+          // تحديث حالة الأكواد إذا تم استخدامها
+          if (paymentSession.voucher_codes && paymentSession.voucher_codes.length > 0) {
+            for (const code of paymentSession.voucher_codes) {
+              await client.query(
+                'UPDATE voucher_codes SET is_used = TRUE, used_at = NOW(), used_for_course = $1 WHERE code = $2',
+                [paymentSession.course_id, code]
+              );
+            }
+          }
+        });
 
         // تحديث إحصائيات الكورس
-        await updateCourseStats(courseId);
+        await updateCourseStats(paymentSession.course_id);
 
         // إرسال بريد التأكيد
+        const course = await execQuery('SELECT * FROM courses WHERE id = $1', [paymentSession.course_id]);
+        
         await sendEmailSafe({
           to: req.session.user.email,
-          subject: 'تم تسجيلك في الكورس - Elmahdy English',
+          subject: 'تم الدفع والتسجيل في الكورس بنجاح - Elmahdy English',
           html: `
             <div style="font-family: 'Cairo', Arial, sans-serif; direction: rtl; padding: 20px;">
-              <h2 style="color: #0056d6;">تم تسجيلك في الكورس بنجاح! 🎉</h2>
-              <p><strong>الكورس:</strong> ${course.title}</p>
+              <h2 style="color: #0056d6;">تم الدفع والتسجيل في الكورس بنجاح! 🎉</h2>
+              <p><strong>الكورس:</strong> ${course[0].title}</p>
+              <p><strong>المبلغ المدفوع:</strong> ${paymentSession.amount} جنيه</p>
               <p>يمكنك الآن البدء في التعلم من خلال لوحة التعلم.</p>
-              <a href="${APP_URL}/course/${courseId}" style="background: #0056d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+              <a href="${APP_URL}/course/${paymentSession.course_id}" style="background: #0056d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                 ابدأ التعلم
               </a>
             </div>
@@ -1299,16 +1728,16 @@ app.post('/api/enroll',
         // إنشاء إشعار
         await createNotification(
           req.session.user.id,
-          'تم التسجيل في الكورس',
-          `تم تسجيلك في كورس "${course.title}" بنجاح`,
+          'تم الدفع والتسجيل في الكورس',
+          `تم تسجيلك في كورس "${course[0].title}" بنجاح`,
           'success'
         );
 
         // تسجيل النشاط
-        await logActivity(req.session.user.id, 'ENROLL_COURSE', { 
-          courseId, 
-          courseTitle: course.title,
-          free: true 
+        await logActivity(req.session.user.id, 'PAYMENT_COMPLETED', { 
+          courseId: paymentSession.course_id, 
+          amount: paymentSession.amount,
+          transactionId: transactionId
         });
 
         // مسح الكاش
@@ -1317,170 +1746,185 @@ app.post('/api/enroll',
 
         return success(res, { 
           enrollmentId: enrollmentId,
-          redirectUrl: `/course/${courseId}`
-        }, 'تم التسجيل في الكورس بنجاح');
+          redirectUrl: `/course/${paymentSession.course_id}`
+        }, 'تم الدفع والتسجيل في الكورس بنجاح');
+      } else {
+        return fail(res, 'فشل في عملية الدفع', 400);
       }
 
-      // إذا كان الكورس مدفوع، إنشاء طلب دفع
-      const paymentSessionId = uuidv4();
-      
-      await execQuery(
-        `INSERT INTO payment_sessions (id, user_id, course_id, amount, status, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [paymentSessionId, req.session.user.id, courseId, course.price, 'pending', new Date()]
-      );
-
-      success(res, {
-        paymentRequired: true,
-        paymentSessionId: paymentSessionId,
-        amount: course.price,
-        courseTitle: course.title
-      }, 'يجب إتمام عملية الدفع');
-
     } catch (error) {
-      logger.error('Enrollment error', error);
-      fail(res, 'حدث خطأ أثناء التسجيل في الكورس');
+      logger.error('Confirm payment error', error);
+      fail(res, error.message || 'حدث خطأ أثناء تأكيد الدفع');
     }
   }
 );
 
-// تحديث تقدم الطالب مع التحقق من الصحة
-app.post('/api/progress', 
-  requireLogin,
+// دالة مساعدة للتسجيل المباشر
+async function enrollUserDirectly(req, res, courseId, course, voucherCodes = []) {
+  try {
+    const enrollmentId = uuidv4();
+    
+    await withTransaction(async (client) => {
+      // إنشاء التسجيل
+      await client.query(
+        `INSERT INTO enrollments (id, user_id, course_id, enrolled_at, progress, progress_data)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [enrollmentId, req.session.user.id, courseId, new Date(), 0, JSON.stringify({})]
+      );
+
+      // تحديث حالة الأكواد إذا تم استخدامها
+      if (voucherCodes.length > 0) {
+        for (const code of voucherCodes) {
+          await client.query(
+            'UPDATE voucher_codes SET is_used = TRUE, used_at = NOW(), used_for_course = $1 WHERE code = $2',
+            [courseId, code]
+          );
+        }
+      }
+    });
+
+    // تحديث إحصائيات الكورس
+    await updateCourseStats(courseId);
+
+    // إرسال بريد التأكيد
+    await sendEmailSafe({
+      to: req.session.user.email,
+      subject: 'تم تسجيلك في الكورس - Elmahdy English',
+      html: `
+        <div style="font-family: 'Cairo', Arial, sans-serif; direction: rtl; padding: 20px;">
+          <h2 style="color: #0056d6;">تم تسجيلك في الكورس بنجاح! 🎉</h2>
+          <p><strong>الكورس:</strong> ${course.title}</p>
+          <p>يمكنك الآن البدء في التعلم من خلال لوحة التعلم.</p>
+          <a href="${APP_URL}/course/${courseId}" style="background: #0056d6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            ابدأ التعلم
+          </a>
+        </div>
+      `
+    });
+
+    // إنشاء إشعار
+    await createNotification(
+      req.session.user.id,
+      'تم التسجيل في الكورس',
+      `تم تسجيلك في كورس "${course.title}" بنجاح`,
+      'success'
+    );
+
+    // تسجيل النشاط
+    await logActivity(req.session.user.id, 'ENROLL_COURSE', { 
+      courseId, 
+      courseTitle: course.title,
+      free: true 
+    });
+
+    // مسح الكاش
+    clearCacheByPattern('courses');
+    deleteFromCache(`user_courses_${req.session.user.id}`);
+
+    return success(res, { 
+      enrollmentId: enrollmentId,
+      redirectUrl: `/course/${courseId}`
+    }, 'تم التسجيل في الكورس بنجاح');
+  } catch (error) {
+    throw error;
+  }
+}
+
+// ========= نظام الأكواد والخصومات =========
+
+// إنشاء أكواد خصم (للمسؤول)
+app.post('/api/admin/vouchers', 
+  requireLogin, 
+  checkRole(['admin']),
   validateInput([
-    body('courseId').isUUID().withMessage('معرف الكورس غير صالح'),
-    body('lessonId').isUUID().withMessage('معرف الدرس غير صالح'),
-    body('partId').isUUID().withMessage('معرف الجزء غير صالح'),
-    body('completed').isBoolean().withMessage('يجب أن تكون القيمة boolean')
+    body('value').isFloat({ min: 1 }).withMessage('قيمة الكود يجب أن تكون رقم موجب'),
+    body('quantity').optional().isInt({ min: 1, max: 100 }).withMessage('الكمية يجب أن تكون بين 1 و 100'),
+    body('type').optional().isIn(Object.values(CODE_TYPES)).withMessage('نوع الكود غير صالح')
   ]),
   async (req, res) => {
     try {
-      const { courseId, lessonId, partId, completed } = req.body;
-
-      // الحصول على التسجيل الحالي
-      const enrollment = await execQuery(
-        'SELECT * FROM enrollments WHERE user_id = $1 AND course_id = $2',
-        [req.session.user.id, courseId]
-      );
-
-      if (enrollment.length === 0) {
-        return fail(res, 'أنت غير مسجل في هذا الكورس', 404);
-      }
-
-      // تحديث التقدم
-      let progressData = enrollment[0].progress_data || {};
+      const { value, quantity = 1, type = 'COURSE' } = req.body;
       
-      if (!progressData.lessons) {
-        progressData.lessons = {};
-      }
+      const vouchers = [];
 
-      if (!progressData.lessons[lessonId]) {
-        progressData.lessons[lessonId] = {
-          completed_parts: [],
-          completed: false
+      for (let i = 0; i < quantity; i++) {
+        const voucher = {
+          id: uuidv4(),
+          code: generateVoucherCode(),
+          value: parseFloat(value),
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 يوم
+          type: type
         };
+
+        await execQuery(
+          'INSERT INTO voucher_codes (id, code, value, expires_at, type) VALUES ($1, $2, $3, $4, $5)',
+          [voucher.id, voucher.code, voucher.value, voucher.expires_at, voucher.type]
+        );
+
+        vouchers.push(voucher);
       }
 
-      if (completed) {
-        if (!progressData.lessons[lessonId].completed_parts.includes(partId)) {
-          progressData.lessons[lessonId].completed_parts.push(partId);
-        }
-      } else {
-        progressData.lessons[lessonId].completed_parts = 
-          progressData.lessons[lessonId].completed_parts.filter(id => id !== partId);
-      }
-
-      // حساب التقدم الكلي
-      const totalParts = await execQuery(`
-        SELECT COUNT(*) as count FROM lesson_parts lp
-        JOIN lessons l ON lp.lesson_id = l.id
-        WHERE l.course_id = $1
-      `, [courseId]);
-
-      const completedParts = Object.values(progressData.lessons)
-        .reduce((total, lesson) => total + lesson.completed_parts.length, 0);
-
-      const totalPartsCount = totalParts[0]?.count || 1;
-      const progress = Math.round((completedParts / totalPartsCount) * 100);
-
-      // تحديث قاعدة البيانات
-      await execQuery(
-        'UPDATE enrollments SET progress = $1, progress_data = $2, updated_at = $3 WHERE user_id = $4 AND course_id = $5',
-        [progress, JSON.stringify(progressData), new Date(), req.session.user.id, courseId]
-      );
-
-      // تسجيل النشاط
-      await logActivity(req.session.user.id, 'UPDATE_PROGRESS', { 
-        courseId, lessonId, partId, progress, completed 
+      success(res, { 
+        message: `تم إنشاء ${quantity} كود بنجاح`,
+        vouchers: vouchers
       });
-
-      success(res, {
-        progress: progress,
-        completedParts: completedParts,
-        totalParts: totalPartsCount
-      }, 'تم تحديث التقدم');
-
     } catch (error) {
-      logger.error('Update progress error', error);
-      fail(res, 'حدث خطأ أثناء تحديث التقدم');
+      logger.error('Create vouchers error', error);
+      fail(res, 'حدث خطأ أثناء إنشاء الأكواد');
     }
   }
 );
 
-// الحصول على كورسات المستخدم
-app.get('/api/user/courses', requireLogin, async (req, res) => {
-  try {
-    const enrollments = await execQuery(`
-      SELECT e.*, c.title, c.description, c.image, c.instructor_id, u.username as instructor_name
-      FROM enrollments e
-      JOIN courses c ON e.course_id = c.id
-      LEFT JOIN users u ON c.instructor_id = u.id
-      WHERE e.user_id = $1
-      ORDER BY e.updated_at DESC
-    `, [req.session.user.id]);
+// التحقق من صحة الكود
+app.post('/api/validate-voucher', 
+  validateInput([
+    body('code').notEmpty().withMessage('الكود مطلوب'),
+    body('courseId').optional().isUUID().withMessage('معرف الكورس غير صالح')
+  ]),
+  async (req, res) => {
+    try {
+      const { code, courseId } = req.body;
+      
+      const validation = await validateVoucher(code, courseId);
+      
+      if (validation.valid) {
+        success(res, { 
+          value: validation.value, 
+          valid: true,
+          type: validation.type,
+          message: validation.message
+        });
+      } else {
+        fail(res, validation.message, 400);
+      }
+    } catch (error) {
+      logger.error('Validate voucher error', error);
+      fail(res, 'خطأ في التحقق من الكود');
+    }
+  }
+);
 
-    success(res, { courses: enrollments });
+// الحصول على أكواد التعويض للمستخدم
+app.get('/api/user/compensation-codes', requireLogin, async (req, res) => {
+  try {
+    const discountCodes = await execQuery(
+      'SELECT * FROM discount_codes WHERE user_id = $1 AND type = $2 AND status = $3',
+      [req.session.user.id, CODE_TYPES.COMPENSATION, 'active']
+    );
+
+    // إزالة الأكواد المنتهية
+    const now = new Date();
+    const validCodes = discountCodes.filter(dc => {
+      const expiresAt = new Date(dc.expires_at);
+      return expiresAt > now;
+    });
+
+    success(res, { codes: validCodes });
   } catch (error) {
-    logger.error('Get user courses error', error);
-    fail(res, 'حدث خطأ في جلب كورساتك');
+    logger.error('Get compensation codes error', error);
+    fail(res, 'حدث خطأ في جلب أكواد التعويض');
   }
 });
-
-// إنشاء كورس جديد (للمعلمين)
-app.post('/api/courses', 
-  requireLogin,
-  checkRole(['teacher', 'admin']),
-  validateInput([
-    body('title').isLength({ min: 5 }).withMessage('العنوان يجب أن يكون 5 أحرف على الأقل'),
-    body('description').isLength({ min: 10 }).withMessage('الوصف يجب أن يكون 10 أحرف على الأقل'),
-    body('category').notEmpty().withMessage('التصنيف مطلوب')
-  ]),
-  async (req, res) => {
-    try {
-      const { title, description, category, level, price, is_free, requirements, objectives } = req.body;
-      
-      const courseId = uuidv4();
-      
-      await execQuery(
-        `INSERT INTO courses (id, title, description, category, level, price, is_free, 
-         requirements, objectives, instructor_id, published, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-        [courseId, sanitizeInput(title), sanitizeInput(description), category, level, 
-         price || 0, is_free || false,
-         JSON.stringify(requirements || []), JSON.stringify(objectives || []),
-         req.session.user.id, false, new Date()]
-      );
-
-      await logActivity(req.session.user.id, 'CREATE_COURSE', { courseId, title });
-
-      success(res, { courseId: courseId }, 'تم إنشاء الكورس بنجاح');
-
-    } catch (error) {
-      logger.error('Create course error', error);
-      fail(res, 'حدث خطأ أثناء إنشاء الكورس');
-    }
-  }
-);
 
 // ========= نظام المستخدمين =========
 
@@ -1770,131 +2214,6 @@ app.post('/api/user/reset-password',
     }
   }
 );
-
-// ========= نظام المدفوعات =========
-
-// إنشاء جلسة دفع
-app.post('/api/payment/create-session', 
-  requireLogin,
-  validateInput([
-    body('paymentSessionId').isUUID().withMessage('معرف جلسة الدفع غير صالح')
-  ]),
-  async (req, res) => {
-    try {
-      const { courseId, paymentSessionId } = req.body;
-
-      // التحقق من جلسة الدفع
-      const paymentSession = await execQuery(
-        'SELECT * FROM payment_sessions WHERE id = $1 AND user_id = $2 AND status = $3',
-        [paymentSessionId, req.session.user.id, 'pending']
-      );
-
-      if (paymentSession.length === 0) {
-        return fail(res, 'جلسة الدفع غير موجودة أو منتهية', 404);
-      }
-
-      const session = paymentSession[0];
-
-      // محاكاة الدفع الناجح
-      const enrollmentId = uuidv4();
-      
-      await execQuery(
-        `INSERT INTO enrollments (id, user_id, course_id, enrolled_at, progress, progress_data)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [enrollmentId, req.session.user.id, session.course_id, new Date(), 0, JSON.stringify({})]
-      );
-
-      // تحديث حالة الدفع
-      await execQuery(
-        'UPDATE payment_sessions SET status = $1, completed_at = $2 WHERE id = $3',
-        ['completed', new Date(), paymentSessionId]
-      );
-
-      // تحديث إحصائيات الكورس
-      await updateCourseStats(session.course_id);
-
-      await logActivity(req.session.user.id, 'PAYMENT_COMPLETED', { 
-        courseId: session.course_id, amount: session.amount 
-      });
-
-      success(res, {
-        enrollmentId: enrollmentId,
-        redirectUrl: `/course/${session.course_id}`
-      }, 'تم الدفع والتسجيل في الكورس بنجاح');
-
-    } catch (error) {
-      logger.error('Payment error', error);
-      fail(res, 'حدث خطأ أثناء عملية الدفع');
-    }
-  }
-);
-
-// ========= الإحصائيات والتقارير =========
-
-// إحصائيات النظام
-app.get('/api/stats', requireLogin, checkRole(['admin']), async (req, res) => {
-  try {
-    const stats = await getSystemStats();
-    success(res, { stats });
-  } catch (error) {
-    logger.error('Get stats error', error);
-    fail(res, 'حدث خطأ في جلب الإحصائيات');
-  }
-});
-
-// إحصائيات متقدمة
-app.get('/api/admin/stats/advanced', requireLogin, checkRole(['admin']), async (req, res) => {
-  try {
-    const revenueByMonth = await getRevenueReportByMonth();
-    const popularCourses = await getMostPopularCourses(10);
-    const systemStats = await getSystemStats();
-    const revenueTrend = await getRevenueTrend(30);
-    
-    success(res, {
-      revenueByMonth,
-      popularCourses,
-      systemStats,
-      revenueTrend
-    });
-  } catch (error) {
-    logger.error('Get advanced stats error', error);
-    fail(res, 'حدث خطأ في جلب الإحصائيات المتقدمة');
-  }
-});
-
-// إحصائيات المدرب
-app.get('/api/instructor/stats', requireLogin, checkRole(['teacher']), async (req, res) => {
-  try {
-    const courses = await execQuery(
-      'SELECT * FROM courses WHERE instructor_id = $1',
-      [req.session.user.id]
-    );
-    
-    const totalStudents = await execQuery(`
-      SELECT COUNT(DISTINCT e.user_id) as count 
-      FROM enrollments e
-      JOIN courses c ON e.course_id = c.id
-      WHERE c.instructor_id = $1
-    `, [req.session.user.id]);
-
-    const revenue = await execQuery(`
-      SELECT COALESCE(SUM(ps.amount), 0) as total 
-      FROM payment_sessions ps
-      JOIN courses c ON ps.course_id = c.id
-      WHERE c.instructor_id = $1 AND ps.status = 'completed'
-    `, [req.session.user.id]);
-
-    success(res, {
-      totalCourses: courses.length,
-      totalStudents: parseInt(totalStudents[0].count),
-      totalRevenue: parseFloat(revenue[0].total),
-      courses: courses
-    });
-  } catch (error) {
-    logger.error('Get instructor stats error', error);
-    fail(res, 'حدث خطأ في جلب إحصائيات المدرب');
-  }
-});
 
 // ========= دوال جديدة مطلوبة =========
 
@@ -2297,6 +2616,10 @@ async function createEducationTables() {
         course_id VARCHAR(36) REFERENCES courses(id),
         amount DECIMAL(10,2),
         status VARCHAR(50) DEFAULT 'pending',
+        payment_token VARCHAR(500),
+        order_id VARCHAR(100),
+        transaction_id VARCHAR(100),
+        voucher_codes JSONB,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         completed_at TIMESTAMP
       )
@@ -2403,6 +2726,47 @@ async function createEducationTables() {
       )
     `);
 
+    // جدول أكواد الخصم
+    await execQuery(`
+      CREATE TABLE IF NOT EXISTS voucher_codes (
+        id VARCHAR(36) PRIMARY KEY,
+        code VARCHAR(20) UNIQUE NOT NULL,
+        value DECIMAL(10,2) NOT NULL,
+        is_used BOOLEAN DEFAULT FALSE,
+        used_at TIMESTAMP,
+        used_for_course VARCHAR(36),
+        expires_at TIMESTAMP,
+        type VARCHAR(20) DEFAULT 'VOUCHER',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // جدول أكواد الخصم الإضافية
+    await execQuery(`
+      CREATE TABLE IF NOT EXISTS discount_codes (
+        id VARCHAR(36) PRIMARY KEY,
+        code VARCHAR(20) UNIQUE NOT NULL,
+        value DECIMAL(10,2) NOT NULL,
+        type VARCHAR(20) NOT NULL,
+        course_id VARCHAR(36),
+        course_name VARCHAR(255),
+        source VARCHAR(20) NOT NULL,
+        status VARCHAR(20) DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP,
+        used_by VARCHAR(36),
+        used_at TIMESTAMP,
+        used_for_course VARCHAR(36),
+        original_course_id VARCHAR(36),
+        original_amount DECIMAL(10,2),
+        cancellation_type VARCHAR(50),
+        message TEXT,
+        user_id VARCHAR(36),
+        hours_before_course INTEGER,
+        compensation_percentage DECIMAL(5,2)
+      )
+    `);
+
     logger.info('✅ All tables created successfully');
   } catch (error) {
     logger.error('❌ Error creating tables', error);
@@ -2458,6 +2822,17 @@ async function seedSampleData() {
         `INSERT INTO courses (id, title, description, category, level, price, is_free, instructor_id, published)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [course3Id, 'قواعد اللغة الإنجليزية الأساسية', 'شرح مبسط لقواعد اللغة الإنجليزية', 'grammar', 'beginner', 0, true, teacherId, true]
+      );
+
+      // إضافة أكواد خصم تجريبية
+      await execQuery(
+        'INSERT INTO voucher_codes (id, code, value, expires_at, type) VALUES ($1, $2, $3, $4, $5)',
+        [uuidv4(), 'WELCOME50', 50, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'COURSE']
+      );
+
+      await execQuery(
+        'INSERT INTO voucher_codes (id, code, value, expires_at, type) VALUES ($1, $2, $3, $4, $5)',
+        [uuidv4(), 'STUDENT100', 100, new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), 'PREMIUM']
       );
 
       logger.info('✅ Sample data seeded successfully');
