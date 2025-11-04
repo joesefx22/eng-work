@@ -303,6 +303,7 @@
         .section-details {
             display: flex;
             align-items: center;
+            flex: 1;
         }
         
         .section-number {
@@ -316,6 +317,7 @@
             justify-content: center;
             font-weight: 600;
             margin-left: 1rem;
+            flex-shrink: 0;
         }
         
         .section-content-type {
@@ -333,6 +335,7 @@
             display: flex;
             gap: 10px;
             align-items: center;
+            flex-shrink: 0;
         }
         
         .navigation-buttons {
@@ -357,8 +360,8 @@
             color: var(--text-dark);
         }
         
-        /* Lessons Section */
-        .lessons-section, .description-section, .instructor-card, .requirements-card {
+        /* Instructor Card */
+        .instructor-card, .requirements-card {
             background-color: white;
             border-radius: 10px;
             padding: 1.5rem;
@@ -366,54 +369,6 @@
             margin-bottom: 1.5rem;
         }
         
-        .lesson-item {
-            border: 1px solid var(--border-light);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            transition: var(--transition);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .lesson-item:hover {
-            border-color: var(--primary-blue);
-            background-color: var(--light-blue);
-        }
-        
-        .lesson-info {
-            display: flex;
-            align-items: center;
-        }
-        
-        .lesson-number {
-            background-color: var(--light-blue);
-            color: var(--primary-blue);
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            margin-left: 1rem;
-        }
-        
-        .lesson-duration {
-            color: var(--text-light);
-            font-size: 0.9rem;
-        }
-        
-        .lesson-locked {
-            color: var(--text-light);
-        }
-        
-        .lesson-locked i {
-            margin-left: 0.5rem;
-        }
-        
-        /* Instructor Card */
         .instructor-info {
             text-align: center;
             padding: 1rem 0;
@@ -506,6 +461,11 @@
                 margin-top: 0.5rem;
                 width: 100%;
                 justify-content: space-between;
+            }
+            
+            .section-details {
+                width: 100%;
+                margin-bottom: 0.5rem;
             }
         }
     </style>
@@ -656,6 +616,9 @@
                                         <h3 class="section-title"><i class="fas fa-list-ol"></i> أقسام الكورس</h3>
                                         <div id="sectionsContainer">
                                             <!-- سيتم تعبئة الأقسام هنا -->
+                                            <div class="loading">
+                                                <div class="spinner"></div>
+                                            </div>
                                         </div>
                                         <div class="navigation-buttons" id="navigationButtons">
                                             <button class="btn btn-outline-primary" id="prevSection" disabled>
@@ -770,7 +733,20 @@
                 return progress;
             } catch (error) {
                 console.error('Error loading user progress:', error);
-                return { progress: 0, completedSections: [] };
+                return { progress: 0, completedSections: [], currentSectionIndex: 0 };
+            }
+        }
+
+        async function loadSectionData(sectionId) {
+            try {
+                const response = await fetch(`/api/section/${sectionId}`);
+                if (!response.ok) throw new Error('Failed to fetch section data');
+                
+                const sectionData = await response.json();
+                return sectionData;
+            } catch (error) {
+                console.error('Error loading section data:', error);
+                throw error;
             }
         }
 
@@ -788,9 +764,9 @@
             document.getElementById('courseLevel').textContent = getLevelName(course.level);
             document.getElementById('courseDuration').textContent = course.duration || 'غير محدد';
             document.getElementById('coursePrice').textContent = course.price === 0 ? 'مجاني' : `${course.price} ج.م`;
-            document.getElementById('studentsCount').textContent = course.students_count || 0;
+            document.getElementById('studentsCount').textContent = course.students_count ? course.students_count.toLocaleString() : '0';
             document.getElementById('courseRating').textContent = course.average_rating ? course.average_rating.toFixed(1) : '0.0';
-            document.getElementById('fullDescription').innerHTML = course.full_description || course.description;
+            document.getElementById('fullDescription').innerHTML = course.full_description || course.description || 'لا يوجد وصف مفصل للكورس';
             
             // تحديث معلومات المدرب
             document.getElementById('instructorName').textContent = course.instructor_name || 'مجهول';
@@ -800,18 +776,36 @@
             
             // تحديث المتطلبات
             const requirementsList = document.getElementById('requirementsList');
-            requirementsList.innerHTML = (course.requirements || []).map(req => `<li>${req}</li>`).join('');
+            if (course.requirements && course.requirements.length > 0) {
+                requirementsList.innerHTML = course.requirements.map(req => `<li>${req}</li>`).join('');
+            } else {
+                requirementsList.innerHTML = '<li>لا توجد متطلبات مسبقة</li>';
+            }
             
             // تحديث ما سيتعلمه المستخدم
             const learningOutcomesList = document.getElementById('learningOutcomesList');
-            learningOutcomesList.innerHTML = (course.learning_outcomes || []).map(outcome => `<li>${outcome}</li>`).join('');
+            if (course.learning_outcomes && course.learning_outcomes.length > 0) {
+                learningOutcomesList.innerHTML = course.learning_outcomes.map(outcome => `<li>${outcome}</li>`).join('');
+            } else {
+                learningOutcomesList.innerHTML = '<li>سيتم إضافة مخرجات التعلم قريباً</li>';
+            }
         }
 
         function renderCourseSections(sections, userProgress, courseStatus) {
             const container = document.getElementById('sectionsContainer');
-            const sectionsCount = document.getElementById('sectionsCount');
             
-            sectionsCount.textContent = sections.length;
+            // تحديث عدد الأقسام
+            document.getElementById('sectionsCount').textContent = sections.length;
+            
+            if (sections.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">لا توجد أقسام متاحة لهذا الكورس بعد</p>
+                    </div>
+                `;
+                return;
+            }
             
             container.innerHTML = sections.map((section, index) => {
                 const isCompleted = userProgress.completedSections.includes(section.id);
@@ -822,7 +816,7 @@
                                  section.content_type === 'pdf' ? 'badge-pdf' : 'badge-quiz';
                 
                 const contentTypeName = section.content_type === 'video' ? 'فيديو' : 
-                                      section.content_type === 'pdf' ? 'ملف PDF' : 'اختبار';
+                                      section.content_type === 'pdf' ? 'ملف PDF' : `اختبار (${section.questions_count || 0} أسئلة)`;
                 
                 return `
                     <div class="section-item ${isCurrent ? 'active' : ''} ${isCompleted ? 'completed' : ''} ${!isAccessible ? 'opacity-50' : ''}" 
@@ -832,21 +826,24 @@
                         <div class="section-info">
                             <div class="section-details">
                                 <div class="section-number">${index + 1}</div>
-                                <div>
+                                <div style="flex: 1;">
                                     <h6 class="mb-1">${section.title}</h6>
-                                    <div class="d-flex align-items-center">
+                                    <div class="d-flex align-items-center flex-wrap">
                                         <span class="section-content-type">
                                             <span class="badge ${badgeClass}">${contentTypeName}</span>
                                         </span>
-                                        <span class="section-duration ms-2">${section.duration || 'غير محدد'}</span>
+                                        <span class="section-duration ms-2">${section.duration || 'غير محدد'} دقيقة</span>
+                                        ${section.content_type === 'quiz' ? 
+                                            `<span class="badge bg-warning text-dark ms-2">النسبة المطلوبة: ${section.pass_score || 70}%</span>` : ''}
                                     </div>
+                                    ${section.description ? `<p class="text-muted mt-1 mb-0">${section.description}</p>` : ''}
                                 </div>
                             </div>
                             <div class="section-actions">
                                 ${isCompleted ? '<span class="badge bg-success"><i class="fas fa-check"></i> مكتمل</span>' : ''}
                                 ${!isAccessible ? '<span class="text-muted"><i class="fas fa-lock"></i> مقفل</span>' : 
                                   `<button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); openSectionContent(${section.id}, '${section.content_type}')">
-                                    ${section.content_type === 'quiz' ? 'ابدأ الاختبار' : 'شاهد الآن'}
+                                    ${getActionButtonText(section.content_type)}
                                    </button>`}
                             </div>
                         </div>
@@ -860,6 +857,15 @@
             
             // تحديث أزرار التنقل
             updateNavigationButtons(userProgress.currentSectionIndex, sections.length);
+        }
+
+        function getActionButtonText(contentType) {
+            switch(contentType) {
+                case 'video': return 'شاهد الفيديو';
+                case 'pdf': return 'فتح الملف';
+                case 'quiz': return 'ابدأ الاختبار';
+                default: return 'فتح المحتوى';
+            }
         }
 
         function updateNavigationButtons(currentIndex, totalSections) {
@@ -876,32 +882,62 @@
         function navigateToSection(sectionIndex) {
             const sections = document.querySelectorAll('.section-item');
             if (sections[sectionIndex]) {
-                sections[sectionIndex].click();
+                const sectionId = sections[sectionIndex].getAttribute('data-section-id');
+                const isAccessible = !sections[sectionIndex].classList.contains('opacity-50');
+                handleSectionClick(sectionId, sectionIndex, isAccessible);
             }
         }
 
         function handleSectionClick(sectionId, sectionIndex, isAccessible) {
-            if (!isAccessible) return;
+            if (!isAccessible) {
+                alert('هذا القسم مقفل. يرجى الاشتراك في الكورس أولاً.');
+                return;
+            }
             
             // تحديث الواجهة
             document.querySelectorAll('.section-item').forEach(item => item.classList.remove('active'));
             document.querySelector(`[data-section-index="${sectionIndex}"]`).classList.add('active');
             
             // تحديث أزرار التنقل
-            updateNavigationButtons(sectionIndex, document.querySelectorAll('.section-item').length);
-            
-            // يمكن إضافة منطق إضافي هنا مثل تحميل معاينة للمحتوى
+            const totalSections = document.querySelectorAll('.section-item').length;
+            updateNavigationButtons(sectionIndex, totalSections);
         }
 
-        function openSectionContent(sectionId, contentType) {
-            // التوجيه للصفحة المخصصة حسب نوع المحتوى
-            const pages = {
-                'video': '/course/video',
-                'pdf': '/course/pdf',
-                'quiz': '/course/quiz'
-            };
-            
-            window.location.href = `${pages[contentType]}?section_id=${sectionId}`;
+        async function openSectionContent(sectionId, contentType) {
+            try {
+                // جلب بيانات القسم أولاً
+                const sectionData = await loadSectionData(sectionId);
+                
+                // التوجيه للصفحة المخصصة مع إرسال بيانات القسم
+                const pages = {
+                    'video': '/course/video',
+                    'pdf': '/course/pdf', 
+                    'quiz': '/course/quiz'
+                };
+                
+                if (!pages[contentType]) {
+                    throw new Error('نوع المحتوى غير مدعوم');
+                }
+                
+                // إنشاء رابط مع جميع بيانات القسم
+                const url = new URL(pages[contentType], window.location.origin);
+                url.searchParams.set('section_id', sectionId);
+                url.searchParams.set('course_id', sectionData.course_id);
+                url.searchParams.set('section_title', encodeURIComponent(sectionData.title));
+                url.searchParams.set('content_url', encodeURIComponent(sectionData.content_url || ''));
+                url.searchParams.set('duration', sectionData.duration || '');
+                
+                if (contentType === 'quiz') {
+                    url.searchParams.set('questions_count', sectionData.questions_count || 0);
+                    url.searchParams.set('pass_score', sectionData.pass_score || 70);
+                }
+                
+                window.location.href = url.toString();
+                
+            } catch (error) {
+                console.error('Error opening section content:', error);
+                alert('حدث خطأ في فتح المحتوى: ' + error.message);
+            }
         }
 
         function getLevelName(level) {
@@ -913,18 +949,13 @@
             return levels[level] || level;
         }
 
-        function getContentTypeName(contentType) {
-            const types = {
-                'video': 'فيديو',
-                'pdf': 'ملف PDF',
-                'quiz': 'اختبار'
-            };
-            return types[contentType] || contentType;
-        }
-
         // دالة للتحقق من حالة الكورس بالنسبة للمستخدم
         function getCourseStatus(course, userData) {
-            const purchasedCourse = userData.purchased_courses?.find(pc => pc.course_id === course.id);
+            if (!userData.purchased_courses) {
+                return { status: 'not_purchased' };
+            }
+            
+            const purchasedCourse = userData.purchased_courses.find(pc => pc.course_id === course.id);
             
             if (!purchasedCourse) {
                 return { status: 'not_purchased' };
@@ -973,31 +1004,48 @@
             const urlParams = new URLSearchParams(window.location.search);
             const courseId = urlParams.get('id');
             
-            const userData = await loadUserData();
-            const course = await loadCourseDetails(courseId);
-            const courseStatus = getCourseStatus(course, userData);
-            
-            switch(courseStatus.status) {
-                case 'not_purchased':
-                    if (course.price === 0) {
-                        // اشتراك مجاني
-                        alert(`تم اشتراكك في كورس "${course.title}" بنجاح!`);
-                        // هنا يمكن إضافة منطق إضافي لتحديث حالة المستخدم
-                        window.location.reload();
-                    } else {
-                        // التوجيه لصفحة الدفع
-                        window.location.href = `/checkout?course_id=${courseId}`;
-                    }
-                    break;
-                case 'owned':
-                    // الانتقال للقسم الحالي
-                    const userProgress = await loadUserProgress(userData.id, courseId);
-                    const currentSectionIndex = userProgress.currentSectionIndex || 0;
-                    navigateToSection(currentSectionIndex);
-                    break;
-                case 'expired':
-                    alert('هذا الكورس منتهي الصلاحية، يرجى تجديد الاشتراك');
-                    break;
+            try {
+                const userData = await loadUserData();
+                const course = await loadCourseDetails(courseId);
+                const courseStatus = getCourseStatus(course, userData);
+                
+                switch(courseStatus.status) {
+                    case 'not_purchased':
+                        if (course.price === 0) {
+                            // اشتراك مجاني
+                            const enrollResponse = await fetch('/api/enroll/free', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    user_id: userData.id,
+                                    course_id: courseId
+                                })
+                            });
+                            
+                            if (enrollResponse.ok) {
+                                alert(`تم اشتراكك في كورس "${course.title}" بنجاح!`);
+                                window.location.reload();
+                            } else {
+                                throw new Error('فشل في الاشتراك المجاني');
+                            }
+                        } else {
+                            // التوجيه لصفحة الدفع
+                            window.location.href = `/checkout?course_id=${courseId}`;
+                        }
+                        break;
+                    case 'owned':
+                        // الانتقال للقسم الحالي
+                        const userProgress = await loadUserProgress(userData.id, courseId);
+                        const currentSectionIndex = userProgress.currentSectionIndex || 0;
+                        navigateToSection(currentSectionIndex);
+                        break;
+                    case 'expired':
+                        alert('هذا الكورس منتهي الصلاحية، يرجى تجديد الاشتراك');
+                        break;
+                }
+            } catch (error) {
+                console.error('Error handling enrollment:', error);
+                alert('حدث خطأ: ' + error.message);
             }
         });
 
@@ -1008,7 +1056,7 @@
             const courseId = urlParams.get('id');
             
             if (!courseId) {
-                alert('معرف الكورس غير موجود');
+                alert('معرف الكورس غير موجود في الرابط');
                 return;
             }
             
@@ -1033,7 +1081,16 @@
                 
             } catch (error) {
                 console.error('Error initializing page:', error);
-                alert('حدث خطأ في تحميل بيانات الكورس');
+                document.getElementById('allCoursesContainer').innerHTML = `
+                    <div class="col-12">
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h4>حدث خطأ في تحميل بيانات الكورس</h4>
+                            <p>يرجى المحاولة مرة أخرى</p>
+                            <button class="btn btn-primary mt-3" onclick="window.location.reload()">إعادة تحميل</button>
+                        </div>
+                    </div>
+                `;
             }
         });
     </script>
