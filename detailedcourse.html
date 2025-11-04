@@ -232,6 +232,131 @@
             width: 20px;
         }
         
+        /* Sections Navigation */
+        .sections-navigation {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+        
+        .nav-tabs {
+            border-bottom: 2px solid var(--border-light);
+        }
+        
+        .nav-tabs .nav-link {
+            color: var(--text-light);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--primary-blue);
+            border-bottom: 3px solid var(--primary-blue);
+            background: none;
+        }
+        
+        /* Sections Content */
+        .sections-content {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-item {
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        
+        .section-item:hover {
+            border-color: var(--primary-blue);
+            background-color: var(--light-blue);
+        }
+        
+        .section-item.active {
+            border-color: var(--primary-blue);
+            background-color: var(--light-blue);
+        }
+        
+        .section-item.completed {
+            border-color: var(--success);
+            background-color: rgba(40, 167, 69, 0.1);
+        }
+        
+        .section-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .section-details {
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-number {
+            background-color: var(--light-blue);
+            color: var(--primary-blue);
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-left: 1rem;
+        }
+        
+        .section-content-type {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-left: 1rem;
+        }
+        
+        .section-duration {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        
+        .section-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-light);
+        }
+        
+        /* Content Type Badges */
+        .badge-video {
+            background-color: var(--primary-blue);
+        }
+        
+        .badge-pdf {
+            background-color: var(--success);
+        }
+        
+        .badge-quiz {
+            background-color: var(--warning);
+            color: var(--text-dark);
+        }
+        
         /* Lessons Section */
         .lessons-section, .description-section, .instructor-card, .requirements-card {
             background-color: white;
@@ -371,6 +496,17 @@
             .course-actions {
                 margin-top: 1.5rem;
             }
+            
+            .section-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .section-actions {
+                margin-top: 0.5rem;
+                width: 100%;
+                justify-content: space-between;
+            }
         }
     </style>
 </head>
@@ -426,11 +562,11 @@
             <!-- Sidebar -->
             <aside class="col-md-3 col-lg-2 sidebar">
                 <div class="user-info">
-                    <img src="/images/avatar.png" alt="صورة المستخدم">
-                    <h5 id="userName">أحمد محمد</h5>
+                    <img id="userAvatar" src="/api/placeholder/80/80" alt="صورة المستخدم">
+                    <h5 id="userName">جاري التحميل...</h5>
                     <div class="wallet">
                         <span>رصيدك</span>
-                        <span id="userBalance">250 ج.م</span>
+                        <span id="userBalance">جاري التحميل...</span>
                     </div>
                 </div>
                 
@@ -453,21 +589,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/profile">
                             <i class="fas fa-user"></i> الملف الشخصي
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/progress">
-                            <i class="fas fa-chart-line"></i> التقدم
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/certificates">
-                            <i class="fas fa-award"></i> الشهادات
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/support">
-                            <i class="fas fa-headset"></i> الدعم
                         </a>
                     </li>
                 </ul>
@@ -496,7 +617,7 @@
                                     </div>
                                     <div class="course-stats">
                                         <div><i class="fas fa-users"></i> <span id="studentsCount">0</span> طالب</div>
-                                        <div><i class="fas fa-play-circle"></i> <span id="lessonsCount">0</span> درس</div>
+                                        <div><i class="fas fa-play-circle"></i> <span id="sectionsCount">0</span> قسم</div>
                                         <div><i class="fas fa-star"></i> <span id="courseRating">0</span> تقييم</div>
                                     </div>
                                 </div>
@@ -504,37 +625,63 @@
                         </div>
                     </div>
 
+                    <!-- تقدم الكورس -->
+                    <div class="progress-section mb-4" id="progressSection" style="display: none;">
+                        <h4 class="section-title">تقدمك في الكورس</h4>
+                        <div class="progress">
+                            <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <p class="text-muted" id="progressText">0% مكتمل</p>
+                    </div>
+
+                    <!-- تنقل بين الأقسام -->
+                    <div class="sections-navigation" id="sectionsNavigation" style="display: none;">
+                        <ul class="nav nav-tabs" id="sectionsTabs">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#courseContent">محتوى الكورس</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#courseDescriptionTab">عن الكورس</a>
+                            </li>
+                        </ul>
+                    </div>
+
                     <!-- محتوى الكورس -->
                     <div class="row">
-                        <div class="col-md-8">
-                            <!-- تقدم الكورس -->
-                            <div class="progress-section mb-4" id="progressSection" style="display: none;">
-                                <h4 class="section-title">تقدمك في الكورس</h4>
-                                <div class="progress">
-                                    <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%"></div>
+                        <div class="col-12">
+                            <div class="tab-content">
+                                <!-- محتوى الأقسام -->
+                                <div class="tab-pane fade show active" id="courseContent">
+                                    <div class="sections-content" id="sectionsContent" style="display: none;">
+                                        <h3 class="section-title"><i class="fas fa-list-ol"></i> أقسام الكورس</h3>
+                                        <div id="sectionsContainer">
+                                            <!-- سيتم تعبئة الأقسام هنا -->
+                                        </div>
+                                        <div class="navigation-buttons" id="navigationButtons">
+                                            <button class="btn btn-outline-primary" id="prevSection" disabled>
+                                                <i class="fas fa-arrow-right"></i> السابق
+                                            </button>
+                                            <button class="btn btn-primary" id="nextSection">
+                                                التالي <i class="fas fa-arrow-left"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <p class="text-muted" id="progressText">0% مكتمل</p>
-                            </div>
 
-                            <!-- قائمة الدروس -->
-                            <div class="lessons-section">
-                                <h3 class="section-title"><i class="fas fa-book-open"></i> محتوى الكورس</h3>
-                                <div id="lessonsContainer">
-                                    <!-- سيتم تعبئة الدروس هنا -->
-                                    <div class="loading">
-                                        <div class="spinner"></div>
+                                <!-- وصف الكورس -->
+                                <div class="tab-pane fade" id="courseDescriptionTab">
+                                    <div class="description-section">
+                                        <h3 class="section-title"><i class="fas fa-info-circle"></i> عن الكورس</h3>
+                                        <div id="fullDescription"></div>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- وصف مفصل -->
-                            <div class="description-section mt-4">
-                                <h3 class="section-title"><i class="fas fa-info-circle"></i> عن الكورس</h3>
-                                <div id="fullDescription"></div>
-                            </div>
                         </div>
+                    </div>
 
-                        <div class="col-md-4">
+                    <!-- معلومات إضافية -->
+                    <div class="row mt-4">
+                        <div class="col-md-8">
                             <!-- معلومات المدرب -->
                             <div class="instructor-card">
                                 <h4 class="section-title"><i class="fas fa-chalkboard-teacher"></i> المدرب</h4>
@@ -544,9 +691,10 @@
                                     <p id="instructorBio">نبذة عن المدرب</p>
                                 </div>
                             </div>
-
+                        </div>
+                        <div class="col-md-4">
                             <!-- متطلبات الكورس -->
-                            <div class="requirements-card mt-3">
+                            <div class="requirements-card">
                                 <h4 class="section-title"><i class="fas fa-tasks"></i> المتطلبات</h4>
                                 <ul id="requirementsList"></ul>
                             </div>
@@ -565,142 +713,234 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // بيانات المستخدم الحالي
-        const currentUser = {
-            id: 1,
-            name: "أحمد محمد",
-            balance: 250,
-            purchasedCourses: [
-                { courseId: 1, expiryDate: "2024-12-31", progress: 35 },
-                { courseId: 4, expiryDate: "2023-10-15", progress: 80 }, // منتهي الصلاحية
-                { courseId: 5, expiryDate: "2024-08-20", progress: 10 }
-            ]
-        };
+        // دوال جلب البيانات من API
+        async function loadUserData(userId = 1) {
+            try {
+                const response = await fetch(`/api/user/${userId}`);
+                if (!response.ok) throw new Error('Failed to fetch user data');
+                
+                const userData = await response.json();
+                updateUserInterface(userData);
+                return userData;
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                // استخدام بيانات افتراضية في حالة الخطأ
+                const defaultUser = {
+                    name: "أحمد محمد",
+                    balance: 250,
+                    avatar_url: "/api/placeholder/80/80"
+                };
+                updateUserInterface(defaultUser);
+                return defaultUser;
+            }
+        }
 
-        // بيانات تجريبية للكورس
-        const sampleCourse = {
-            id: 1,
-            title: "تعلم تطوير الويب باستخدام HTML و CSS",
-            description: "كورس متكامل لتعلم أساسيات تطوير الويب باستخدام HTML و CSS من الصفر حتى الاحتراف",
-            fullDescription: `
-                <p>في هذا الكورس الشامل، ستتعلم أساسيات تطوير الويب باستخدام HTML و CSS من الصفر. ستبدأ رحلتك بتعلم أساسيات HTML لإنشاء هيكل الصفحة، ثم تنتقل إلى CSS لتنسيق وتصميم الصفحات بشكل احترافي.</p>
-                <p>سنتعرف على:</p>
-                <ul>
-                    <li>أساسيات HTML والعناصر الأساسية</li>
-                    <li>تنسيق النصوص والعناصر باستخدام CSS</li>
-                    <li>إنشاء تخطيطات متجاوبة باستخدام Flexbox و Grid</li>
-                    <li>إضافة تأثيرات وتحسينات باستخدام CSS3</li>
-                    <li>مبادئ التصميم الحديثة وتجربة المستخدم</li>
-                </ul>
-                <p>بنهاية هذا الكورس، ستكون قادرًا على إنشاء مواقع ويب متكاملة وجذابة من الصفر.</p>
-            `,
-            instructor: {
-                name: "أحمد علي",
-                bio: "مطور ويب محترف بخبرة تزيد عن 8 سنوات في مجال تطوير الويب والتصميم. عمل مع العديد من الشركات المحلية والعالمية وساعد المئات من الطلاب على بدء مسيرتهم في مجال البرمجة.",
-                image: "https://via.placeholder.com/150/4A90E2/FFFFFF?text=Instructor"
-            },
-            category: "برمجة",
-            level: "مبتدئ",
-            duration: "12 ساعة",
-            price: 0,
-            rating: 4.8,
-            students: 1250,
-            lessons: [
-                { id: 1, title: "مقدمة في HTML", duration: "45 دقيقة", isPreview: true, isCompleted: true },
-                { id: 2, title: "العناصر الأساسية في HTML", duration: "60 دقيقة", isPreview: false, isCompleted: true },
-                { id: 3, title: "الجداول والقوائم", duration: "50 دقيقة", isPreview: false, isCompleted: false },
-                { id: 4, title: "مقدمة في CSS", duration: "55 دقيقة", isPreview: true, isCompleted: false },
-                { id: 5, title: "تحديد العناصر باستخدام CSS", duration: "65 دقيقة", isPreview: false, isCompleted: false },
-                { id: 6, title: "نماذج HTML المتقدمة", duration: "70 دقيقة", isPreview: false, isCompleted: false },
-                { id: 7, title: "التخطيط باستخدام Flexbox", duration: "80 دقيقة", isPreview: false, isCompleted: false },
-                { id: 8, title: "التخطيط باستخدام CSS Grid", duration: "75 دقيقة", isPreview: false, isCompleted: false },
-                { id: 9, title: "التصميم المتجاوب", duration: "85 دقيقة", isPreview: false, isCompleted: false },
-                { id: 10, title: "مشروع نهائي", duration: "120 دقيقة", isPreview: false, isCompleted: false }
-            ],
-            requirements: [
-                "جهاز كمبيوتر يعمل بنظام Windows أو Mac",
-                "اتصال بالإنترنت",
-                "محرر نصوص (سيتم شرح التثبيت في الكورس)",
-                "لا توجد خبرة مسبقة في البرمجة مطلوبة"
-            ],
-            learningOutcomes: [
-                "إنشاء صفحات ويب باستخدام HTML",
-                "تنسيق وتصميم الصفحات باستخدام CSS",
-                "بناء تخطيطات متجاوبة تعمل على جميع الأجهزة",
-                "إضافة تأثيرات وتحسينات باستخدام CSS3",
-                "فهم مبادئ تجربة المستخدم والتصميم الحديث"
-            ]
-        };
-
-        // دوال جلب وعرض تفاصيل الكورس
         async function loadCourseDetails(courseId) {
             try {
-                // محاكاة جلب البيانات من API
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                const response = await fetch(`/api/course/${courseId}`);
+                if (!response.ok) throw new Error('Failed to fetch course details');
                 
-                // في التطبيق الحقيقي، سيتم استبدال هذا بجلب البيانات من قاعدة البيانات
-                const course = sampleCourse;
-                
-                renderCourseDetails(course);
+                const course = await response.json();
+                return course;
             } catch (error) {
                 console.error('Error loading course details:', error);
+                throw error;
             }
+        }
+
+        async function loadCourseSections(courseId) {
+            try {
+                const response = await fetch(`/api/course/${courseId}/sections`);
+                if (!response.ok) throw new Error('Failed to fetch course sections');
+                
+                const sections = await response.json();
+                return sections;
+            } catch (error) {
+                console.error('Error loading course sections:', error);
+                throw error;
+            }
+        }
+
+        async function loadUserProgress(userId, courseId) {
+            try {
+                const response = await fetch(`/api/user/${userId}/course/${courseId}/progress`);
+                if (!response.ok) throw new Error('Failed to fetch user progress');
+                
+                const progress = await response.json();
+                return progress;
+            } catch (error) {
+                console.error('Error loading user progress:', error);
+                return { progress: 0, completedSections: [] };
+            }
+        }
+
+        function updateUserInterface(userData) {
+            document.getElementById('userName').textContent = userData.name;
+            document.getElementById('userBalance').textContent = `${userData.balance} ج.م`;
+            document.getElementById('userAvatar').src = userData.avatar_url || '/api/placeholder/80/80';
         }
 
         function renderCourseDetails(course) {
             // تحديث معلومات الكورس الأساسية
             document.getElementById('courseTitle').textContent = course.title;
             document.getElementById('courseDescription').textContent = course.description;
-            document.getElementById('courseCategory').textContent = course.category;
-            document.getElementById('courseLevel').textContent = course.level;
-            document.getElementById('courseDuration').textContent = course.duration;
+            document.getElementById('courseCategory').textContent = course.category_name || 'عام';
+            document.getElementById('courseLevel').textContent = getLevelName(course.level);
+            document.getElementById('courseDuration').textContent = course.duration || 'غير محدد';
             document.getElementById('coursePrice').textContent = course.price === 0 ? 'مجاني' : `${course.price} ج.م`;
-            document.getElementById('studentsCount').textContent = course.students.toLocaleString();
-            document.getElementById('lessonsCount').textContent = course.lessons.length;
-            document.getElementById('courseRating').textContent = course.rating;
-            document.getElementById('fullDescription').innerHTML = course.fullDescription;
+            document.getElementById('studentsCount').textContent = course.students_count || 0;
+            document.getElementById('courseRating').textContent = course.average_rating ? course.average_rating.toFixed(1) : '0.0';
+            document.getElementById('fullDescription').innerHTML = course.full_description || course.description;
             
             // تحديث معلومات المدرب
-            document.getElementById('instructorName').textContent = course.instructor.name;
-            document.getElementById('instructorBio').textContent = course.instructor.bio;
-            document.getElementById('instructorImage').src = course.instructor.image;
-            document.getElementById('instructorImage').alt = `صورة ${course.instructor.name}`;
+            document.getElementById('instructorName').textContent = course.instructor_name || 'مجهول';
+            document.getElementById('instructorBio').textContent = course.instructor_bio || 'لا توجد معلومات عن المدرب';
+            document.getElementById('instructorImage').src = course.instructor_image || '/api/placeholder/150/150';
+            document.getElementById('instructorImage').alt = `صورة ${course.instructor_name}`;
             
             // تحديث المتطلبات
             const requirementsList = document.getElementById('requirementsList');
-            requirementsList.innerHTML = course.requirements.map(req => `<li>${req}</li>`).join('');
+            requirementsList.innerHTML = (course.requirements || []).map(req => `<li>${req}</li>`).join('');
             
             // تحديث ما سيتعلمه المستخدم
             const learningOutcomesList = document.getElementById('learningOutcomesList');
-            learningOutcomesList.innerHTML = course.learningOutcomes.map(outcome => `<li>${outcome}</li>`).join('');
+            learningOutcomesList.innerHTML = (course.learning_outcomes || []).map(outcome => `<li>${outcome}</li>`).join('');
+        }
+
+        function renderCourseSections(sections, userProgress, courseStatus) {
+            const container = document.getElementById('sectionsContainer');
+            const sectionsCount = document.getElementById('sectionsCount');
             
-            // تحديث حالة الاشتراك والزر
-            updateEnrollmentStatus(course.id);
+            sectionsCount.textContent = sections.length;
             
-            // عرض الدروس
-            renderLessons(course.lessons, course.id);
+            container.innerHTML = sections.map((section, index) => {
+                const isCompleted = userProgress.completedSections.includes(section.id);
+                const isCurrent = index === userProgress.currentSectionIndex;
+                const isAccessible = courseStatus.status === 'owned' || section.is_free;
+                
+                const badgeClass = section.content_type === 'video' ? 'badge-video' : 
+                                 section.content_type === 'pdf' ? 'badge-pdf' : 'badge-quiz';
+                
+                const contentTypeName = section.content_type === 'video' ? 'فيديو' : 
+                                      section.content_type === 'pdf' ? 'ملف PDF' : 'اختبار';
+                
+                return `
+                    <div class="section-item ${isCurrent ? 'active' : ''} ${isCompleted ? 'completed' : ''} ${!isAccessible ? 'opacity-50' : ''}" 
+                         data-section-id="${section.id}" 
+                         data-section-index="${index}"
+                         onclick="handleSectionClick(${section.id}, ${index}, ${isAccessible})">
+                        <div class="section-info">
+                            <div class="section-details">
+                                <div class="section-number">${index + 1}</div>
+                                <div>
+                                    <h6 class="mb-1">${section.title}</h6>
+                                    <div class="d-flex align-items-center">
+                                        <span class="section-content-type">
+                                            <span class="badge ${badgeClass}">${contentTypeName}</span>
+                                        </span>
+                                        <span class="section-duration ms-2">${section.duration || 'غير محدد'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="section-actions">
+                                ${isCompleted ? '<span class="badge bg-success"><i class="fas fa-check"></i> مكتمل</span>' : ''}
+                                ${!isAccessible ? '<span class="text-muted"><i class="fas fa-lock"></i> مقفل</span>' : 
+                                  `<button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); openSectionContent(${section.id}, '${section.content_type}')">
+                                    ${section.content_type === 'quiz' ? 'ابدأ الاختبار' : 'شاهد الآن'}
+                                   </button>`}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // إظهار واجهة الأقسام
+            document.getElementById('sectionsNavigation').style.display = 'block';
+            document.getElementById('sectionsContent').style.display = 'block';
+            
+            // تحديث أزرار التنقل
+            updateNavigationButtons(userProgress.currentSectionIndex, sections.length);
+        }
+
+        function updateNavigationButtons(currentIndex, totalSections) {
+            const prevButton = document.getElementById('prevSection');
+            const nextButton = document.getElementById('nextSection');
+            
+            prevButton.disabled = currentIndex <= 0;
+            nextButton.disabled = currentIndex >= totalSections - 1;
+            
+            prevButton.onclick = () => navigateToSection(currentIndex - 1);
+            nextButton.onclick = () => navigateToSection(currentIndex + 1);
+        }
+
+        function navigateToSection(sectionIndex) {
+            const sections = document.querySelectorAll('.section-item');
+            if (sections[sectionIndex]) {
+                sections[sectionIndex].click();
+            }
+        }
+
+        function handleSectionClick(sectionId, sectionIndex, isAccessible) {
+            if (!isAccessible) return;
+            
+            // تحديث الواجهة
+            document.querySelectorAll('.section-item').forEach(item => item.classList.remove('active'));
+            document.querySelector(`[data-section-index="${sectionIndex}"]`).classList.add('active');
+            
+            // تحديث أزرار التنقل
+            updateNavigationButtons(sectionIndex, document.querySelectorAll('.section-item').length);
+            
+            // يمكن إضافة منطق إضافي هنا مثل تحميل معاينة للمحتوى
+        }
+
+        function openSectionContent(sectionId, contentType) {
+            // التوجيه للصفحة المخصصة حسب نوع المحتوى
+            const pages = {
+                'video': '/course/video',
+                'pdf': '/course/pdf',
+                'quiz': '/course/quiz'
+            };
+            
+            window.location.href = `${pages[contentType]}?section_id=${sectionId}`;
+        }
+
+        function getLevelName(level) {
+            const levels = {
+                'beginner': 'مبتدئ',
+                'intermediate': 'متوسط',
+                'advanced': 'متقدم'
+            };
+            return levels[level] || level;
+        }
+
+        function getContentTypeName(contentType) {
+            const types = {
+                'video': 'فيديو',
+                'pdf': 'ملف PDF',
+                'quiz': 'اختبار'
+            };
+            return types[contentType] || contentType;
         }
 
         // دالة للتحقق من حالة الكورس بالنسبة للمستخدم
-        function getCourseStatus(courseId) {
-            const purchasedCourse = currentUser.purchasedCourses.find(pc => pc.courseId === courseId);
+        function getCourseStatus(course, userData) {
+            const purchasedCourse = userData.purchased_courses?.find(pc => pc.course_id === course.id);
             
             if (!purchasedCourse) {
                 return { status: 'not_purchased' };
             }
             
-            const expiryDate = new Date(purchasedCourse.expiryDate);
+            const expiryDate = new Date(purchasedCourse.expiry_date);
             const today = new Date();
             
             if (expiryDate < today) {
-                return { status: 'expired', expiryDate: purchasedCourse.expiryDate, progress: purchasedCourse.progress };
+                return { status: 'expired', expiryDate: purchasedCourse.expiry_date };
             }
             
-            return { status: 'owned', expiryDate: purchasedCourse.expiryDate, progress: purchasedCourse.progress };
+            return { status: 'owned', expiryDate: purchasedCourse.expiry_date };
         }
 
-        function updateEnrollmentStatus(courseId) {
-            const courseStatus = getCourseStatus(courseId);
+        function updateEnrollmentStatus(course, courseStatus, userProgress) {
             const enrollButton = document.getElementById('enrollButton');
             const progressSection = document.getElementById('progressSection');
             
@@ -709,19 +949,18 @@
                     enrollButton.textContent = 'استمر في التعلم';
                     enrollButton.className = 'btn-enroll owned';
                     progressSection.style.display = 'block';
-                    document.getElementById('progressBar').style.width = `${courseStatus.progress}%`;
-                    document.getElementById('progressText').textContent = `${courseStatus.progress}% مكتمل`;
+                    document.getElementById('progressBar').style.width = `${userProgress.progress}%`;
+                    document.getElementById('progressText').textContent = `${userProgress.progress}% مكتمل`;
                     break;
                 case 'expired':
                     enrollButton.textContent = 'منتهي الصلاحية';
                     enrollButton.className = 'btn-enroll expired';
                     enrollButton.disabled = true;
                     progressSection.style.display = 'block';
-                    document.getElementById('progressBar').style.width = `${courseStatus.progress}%`;
-                    document.getElementById('progressText').textContent = `${courseStatus.progress}% مكتمل (منتهي الصلاحية)`;
+                    document.getElementById('progressBar').style.width = `${userProgress.progress}%`;
+                    document.getElementById('progressText').textContent = `${userProgress.progress}% مكتمل (منتهي الصلاحية)`;
                     break;
                 default:
-                    const course = sampleCourse;
                     enrollButton.textContent = course.price === 0 ? 'ابدأ التعلم مجاناً' : `اشترك الآن - ${course.price} ج.م`;
                     enrollButton.className = 'btn-enroll';
                     progressSection.style.display = 'none';
@@ -729,55 +968,32 @@
             }
         }
 
-        function renderLessons(lessons, courseId) {
-            const container = document.getElementById('lessonsContainer');
-            const courseStatus = getCourseStatus(courseId);
-            
-            container.innerHTML = lessons.map((lesson, index) => {
-                const isLocked = courseStatus.status !== 'owned' && !lesson.isPreview;
-                const isCompleted = courseStatus.status === 'owned' && lesson.isCompleted;
-                
-                return `
-                    <div class="lesson-item ${isCompleted ? 'border-success' : ''}">
-                        <div class="lesson-info">
-                            <div class="lesson-number">${index + 1}</div>
-                            <div>
-                                <h6 class="mb-1 ${isLocked ? 'text-muted' : ''}">${lesson.title}</h6>
-                                <small class="lesson-duration">${lesson.duration}</small>
-                                ${lesson.isPreview ? '<span class="badge bg-info me-2">عينة مجانية</span>' : ''}
-                                ${isCompleted ? '<span class="badge bg-success">مكتمل</span>' : ''}
-                            </div>
-                        </div>
-                        <div>
-                            ${isLocked ? 
-                                '<span class="lesson-locked"><i class="fas fa-lock"></i> مقفل</span>' : 
-                                '<button class="btn btn-sm btn-outline-primary">شاهد الآن</button>'
-                            }
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
         // التعامل مع زر الاشتراك
-        document.getElementById('enrollButton').addEventListener('click', function() {
-            const courseStatus = getCourseStatus(sampleCourse.id);
-            const course = sampleCourse;
+        document.getElementById('enrollButton').addEventListener('click', async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const courseId = urlParams.get('id');
+            
+            const userData = await loadUserData();
+            const course = await loadCourseDetails(courseId);
+            const courseStatus = getCourseStatus(course, userData);
             
             switch(courseStatus.status) {
                 case 'not_purchased':
                     if (course.price === 0) {
+                        // اشتراك مجاني
                         alert(`تم اشتراكك في كورس "${course.title}" بنجاح!`);
                         // هنا يمكن إضافة منطق إضافي لتحديث حالة المستخدم
-                        window.location.href = `/course/player?id=${course.id}`;
+                        window.location.reload();
                     } else {
-                        alert(`سيتم تحويلك لصفحة الدفع لشراء كورس "${course.title}"`);
-                        // هنا يمكن إضافة منطق إضافي للدفع
+                        // التوجيه لصفحة الدفع
+                        window.location.href = `/checkout?course_id=${courseId}`;
                     }
                     break;
                 case 'owned':
-                    alert(`سيتم تحويلك لاستكمال كورس "${course.title}"`);
-                    window.location.href = `/course/player?id=${course.id}`;
+                    // الانتقال للقسم الحالي
+                    const userProgress = await loadUserProgress(userData.id, courseId);
+                    const currentSectionIndex = userProgress.currentSectionIndex || 0;
+                    navigateToSection(currentSectionIndex);
                     break;
                 case 'expired':
                     alert('هذا الكورس منتهي الصلاحية، يرجى تجديد الاشتراك');
@@ -785,16 +1001,40 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // تحديث بيانات المستخدم في الواجهة
-            document.getElementById('userName').textContent = currentUser.name;
-            document.getElementById('userBalance').textContent = `${currentUser.balance} ج.م`;
-            
+        // التهيئة عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', async function() {
             // جلب معرف الكورس من URL
             const urlParams = new URLSearchParams(window.location.search);
-            const courseId = urlParams.get('id') || 1; // استخدام 1 كقيمة افتراضية للعرض
+            const courseId = urlParams.get('id');
             
-            loadCourseDetails(courseId);
+            if (!courseId) {
+                alert('معرف الكورس غير موجود');
+                return;
+            }
+            
+            try {
+                // تحميل البيانات بالتوازي
+                const [userData, course, sections] = await Promise.all([
+                    loadUserData(),
+                    loadCourseDetails(courseId),
+                    loadCourseSections(courseId)
+                ]);
+                
+                const userProgress = await loadUserProgress(userData.id, courseId);
+                const courseStatus = getCourseStatus(course, userData);
+                
+                // تحديث الواجهة
+                renderCourseDetails(course);
+                updateEnrollmentStatus(course, courseStatus, userProgress);
+                
+                if (courseStatus.status === 'owned') {
+                    renderCourseSections(sections, userProgress, courseStatus);
+                }
+                
+            } catch (error) {
+                console.error('Error initializing page:', error);
+                alert('حدث خطأ في تحميل بيانات الكورس');
+            }
         });
     </script>
 </body>
