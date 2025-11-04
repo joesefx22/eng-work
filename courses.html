@@ -213,11 +213,7 @@
             font-weight: 600;
         }
         
-        .course-badge.expired {
-            background-color: var(--danger);
-        }
-        
-        .course-badge.owned {
+        .course-badge.free {
             background-color: var(--success);
         }
         
@@ -238,6 +234,17 @@
             color: var(--text-dark);
             font-size: 1.1rem;
             line-height: 1.4;
+        }
+        
+        .course-description {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            height: 40px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }
         
         .course-instructor {
@@ -281,21 +288,10 @@
             font-size: 1.2rem;
             color: var(--dark-blue);
             margin-bottom: 1rem;
+            text-align: center;
         }
         
-        .course-expiry {
-            font-size: 0.85rem;
-            color: var(--danger);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-        }
-        
-        .course-expiry i {
-            margin-left: 0.5rem;
-        }
-        
-        .btn-enroll {
+        .btn-price {
             background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
             color: white;
             border: none;
@@ -306,28 +302,13 @@
             transition: var(--transition);
         }
         
-        .btn-enroll:hover {
+        .btn-price:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
         }
         
-        .btn-enroll.free {
+        .btn-price.free {
             background: linear-gradient(135deg, #4CAF50, #2E7D32);
-        }
-        
-        .btn-enroll.owned {
-            background: linear-gradient(135deg, var(--success), #1e7e34);
-        }
-        
-        .btn-enroll.expired {
-            background: linear-gradient(135deg, var(--danger), #c82333);
-            cursor: not-allowed;
-        }
-        
-        .btn-enroll:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
         }
         
         /* Loading Animation */
@@ -432,11 +413,11 @@
             <!-- Sidebar -->
             <aside class="col-md-3 col-lg-2 sidebar">
                 <div class="user-info">
-                    <img src="/images/avatar.png" alt="صورة المستخدم">
-                    <h5 id="userName">أحمد محمد</h5>
+                    <img id="userAvatar" src="/api/placeholder/80/80" alt="صورة المستخدم">
+                    <h5 id="userName">جاري التحميل...</h5>
                     <div class="wallet">
                         <span>رصيدك</span>
-                        <span id="userBalance">250 ج.م</span>
+                        <span id="userBalance">جاري التحميل...</span>
                     </div>
                 </div>
                 
@@ -459,21 +440,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/profile">
                             <i class="fas fa-user"></i> الملف الشخصي
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/progress">
-                            <i class="fas fa-chart-line"></i> التقدم
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/certificates">
-                            <i class="fas fa-award"></i> الشهادات
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/support">
-                            <i class="fas fa-headset"></i> الدعم
                         </a>
                     </li>
                 </ul>
@@ -500,10 +466,7 @@
                             <div class="col-md-2 mb-3">
                                 <select class="form-select" id="categoryFilterAll">
                                     <option value="">جميع التصنيفات</option>
-                                    <option value="programming">برمجة</option>
-                                    <option value="design">تصميم</option>
-                                    <option value="marketing">تسويق</option>
-                                    <option value="language">لغات</option>
+                                    <!-- سيتم تعبئة التصنيفات من قاعدة البيانات -->
                                 </select>
                             </div>
                             <div class="col-md-2 mb-3">
@@ -526,13 +489,15 @@
                                     <option value="newest">الأحدث</option>
                                     <option value="popular">الأكثر شعبية</option>
                                     <option value="rating">الأعلى تقييماً</option>
+                                    <option value="price-low">الأقل سعراً</option>
+                                    <option value="price-high">الأعلى سعراً</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
                     <div class="row" id="allCoursesContainer">
-                        <!-- سيتم تعبئة الكورسات هنا -->
+                        <!-- سيتم تعبئة الكورسات من قاعدة البيانات -->
                         <div class="loading">
                             <div class="spinner"></div>
                         </div>
@@ -544,174 +509,63 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // بيانات المستخدم الحالي
-        const currentUser = {
-            id: 1,
-            name: "أحمد محمد",
-            balance: 250,
-            purchasedCourses: [
-                { courseId: 1, expiryDate: "2024-12-31" },
-                { courseId: 4, expiryDate: "2023-10-15" }, // منتهي الصلاحية
-                { courseId: 5, expiryDate: "2024-08-20" }
-            ]
-        };
-
-        // بيانات تجريبية للكورسات
-        const sampleCourses = [
-            {
-                id: 1,
-                title: "تعلم تطوير الويب باستخدام HTML و CSS",
-                instructor: "أحمد علي",
-                category: "programming",
-                level: "beginner",
-                price: 0,
-                rating: 4.8,
-                students: 1250,
-                duration: "12 ساعة",
-                image: "https://via.placeholder.com/300x180/4A90E2/FFFFFF?text=Web+Development",
-                isNew: true
-            },
-            {
-                id: 2,
-                title: "تصميم واجهات المستخدم UX/UI",
-                instructor: "سارة محمد",
-                category: "design",
-                level: "intermediate",
-                price: 299,
-                rating: 4.9,
-                students: 890,
-                duration: "18 ساعة",
-                image: "https://via.placeholder.com/300x180/2196F3/FFFFFF?text=UX/UI+Design",
-                isNew: false
-            },
-            {
-                id: 3,
-                title: "التسويق الرقمي من الصفر إلى الاحتراف",
-                instructor: "محمد عبدالله",
-                category: "marketing",
-                level: "beginner",
-                price: 199,
-                rating: 4.6,
-                students: 2100,
-                duration: "15 ساعة",
-                image: "https://via.placeholder.com/300x180/1976D2/FFFFFF?text=Digital+Marketing",
-                isNew: true
-            },
-            {
-                id: 4,
-                title: "تعلم اللغة الإنجليزية للمبتدئين",
-                instructor: "إيمان خالد",
-                category: "language",
-                level: "beginner",
-                price: 0,
-                rating: 4.7,
-                students: 3400,
-                duration: "20 ساعة",
-                image: "https://via.placeholder.com/300x180/03A9F4/FFFFFF?text=English+Language",
-                isNew: false
-            },
-            {
-                id: 5,
-                title: "برمجة تطبيقات Android باستخدام Kotlin",
-                instructor: "خالد سعيد",
-                category: "programming",
-                level: "intermediate",
-                price: 349,
-                rating: 4.9,
-                students: 750,
-                duration: "25 ساعة",
-                image: "https://via.placeholder.com/300x180/4A90E2/FFFFFF?text=Android+Development",
-                isNew: false
-            },
-            {
-                id: 6,
-                title: "تحليل البيانات باستخدام Python",
-                instructor: "نورا أحمد",
-                category: "programming",
-                level: "advanced",
-                price: 399,
-                rating: 4.8,
-                students: 620,
-                duration: "22 ساعة",
-                image: "https://via.placeholder.com/300x180/2196F3/FFFFFF?text=Data+Analysis",
-                isNew: true
-            }
-        ];
-
-        // دوال جلب وعرض الكورسات
-        async function loadAllCourses(filters = {}) {
+        // دوال جلب البيانات من API
+        async function loadUserData(userId = 1) {
             try {
-                // محاكاة جلب البيانات من API
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                const response = await fetch(`/api/user/${userId}`);
+                if (!response.ok) throw new Error('Failed to fetch user data');
                 
-                let filteredCourses = [...sampleCourses];
-                
-                // تطبيق الفلاتر
-                if (filters.searchAllCourses) {
-                    const searchTerm = filters.searchAllCourses.toLowerCase();
-                    filteredCourses = filteredCourses.filter(course => 
-                        course.title.toLowerCase().includes(searchTerm) ||
-                        course.instructor.toLowerCase().includes(searchTerm)
-                    );
-                }
-                
-                if (filters.categoryFilterAll) {
-                    filteredCourses = filteredCourses.filter(course => 
-                        course.category === filters.categoryFilterAll
-                    );
-                }
-                
-                if (filters.levelFilterAll) {
-                    filteredCourses = filteredCourses.filter(course => 
-                        course.level === filters.levelFilterAll
-                    );
-                }
-                
-                if (filters.priceFilter === "free") {
-                    filteredCourses = filteredCourses.filter(course => course.price === 0);
-                } else if (filters.priceFilter === "paid") {
-                    filteredCourses = filteredCourses.filter(course => course.price > 0);
-                }
-                
-                // تطبيق الترتيب
-                if (filters.sortFilter === "popular") {
-                    filteredCourses.sort((a, b) => b.students - a.students);
-                } else if (filters.sortFilter === "rating") {
-                    filteredCourses.sort((a, b) => b.rating - a.rating);
-                } else {
-                    // الأحدث (المفترض)
-                    filteredCourses.sort((a, b) => b.id - a.id);
-                }
-                
-                renderAllCourses(filteredCourses);
+                const userData = await response.json();
+                updateUserInterface(userData);
             } catch (error) {
-                console.error('Error loading courses:', error);
-                renderDefaultCourses();
+                console.error('Error loading user data:', error);
+                // استخدام بيانات افتراضية في حالة الخطأ
+                updateUserInterface({
+                    name: "أحمد محمد",
+                    balance: 250,
+                    avatar_url: "/api/placeholder/80/80"
+                });
             }
         }
 
-        // دالة للتحقق من حالة الكورس بالنسبة للمستخدم
-        function getCourseStatus(courseId) {
-            const purchasedCourse = currentUser.purchasedCourses.find(pc => pc.courseId === courseId);
-            
-            if (!purchasedCourse) {
-                return { status: 'not_purchased' };
+        async function loadAllCourses(filters = {}) {
+            try {
+                const queryParams = new URLSearchParams();
+                Object.keys(filters).forEach(key => {
+                    if (filters[key]) {
+                        queryParams.append(key, filters[key]);
+                    }
+                });
+
+                const response = await fetch(`/api/courses?${queryParams}`);
+                if (!response.ok) throw new Error('Failed to fetch courses');
+                
+                const courses = await response.json();
+                renderAllCourses(courses);
+            } catch (error) {
+                console.error('Error loading courses:', error);
+                document.getElementById('allCoursesContainer').innerHTML = `
+                    <div class="col-12">
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h4>حدث خطأ في تحميل الكورسات</h4>
+                            <p>يرجى المحاولة مرة أخرى</p>
+                        </div>
+                    </div>
+                `;
             }
-            
-            const expiryDate = new Date(purchasedCourse.expiryDate);
-            const today = new Date();
-            
-            if (expiryDate < today) {
-                return { status: 'expired', expiryDate: purchasedCourse.expiryDate };
-            }
-            
-            return { status: 'owned', expiryDate: purchasedCourse.expiryDate };
+        }
+
+        function updateUserInterface(userData) {
+            document.getElementById('userName').textContent = userData.name;
+            document.getElementById('userBalance').textContent = `${userData.balance} ج.م`;
+            document.getElementById('userAvatar').src = userData.avatar_url || '/api/placeholder/80/80';
         }
 
         function renderAllCourses(courses) {
             const container = document.getElementById('allCoursesContainer');
             
-            if (courses.length === 0) {
+            if (!courses || courses.length === 0) {
                 container.innerHTML = `
                     <div class="col-12">
                         <div class="empty-state">
@@ -725,70 +579,40 @@
             }
             
             container.innerHTML = courses.map(course => {
-                const courseStatus = getCourseStatus(course.id);
-                let buttonText = '';
-                let buttonClass = '';
-                let badgeText = '';
-                let badgeClass = '';
-                let expiryInfo = '';
-                
-                switch(courseStatus.status) {
-                    case 'owned':
-                        buttonText = 'ابدأ التعلم';
-                        buttonClass = 'owned';
-                        badgeText = 'مشترى';
-                        badgeClass = 'owned';
-                        expiryInfo = `<div class="course-expiry"><i class="fas fa-calendar-check"></i> صالح حتى ${formatDate(courseStatus.expiryDate)}</div>`;
-                        break;
-                    case 'expired':
-                        buttonText = 'منتهي الصلاحية';
-                        buttonClass = 'expired';
-                        badgeText = 'منتهي';
-                        badgeClass = 'expired';
-                        expiryInfo = `<div class="course-expiry"><i class="fas fa-exclamation-triangle"></i> انتهت الصلاحية في ${formatDate(courseStatus.expiryDate)}</div>`;
-                        break;
-                    default:
-                        buttonText = course.price === 0 ? 'ابدأ التعلم' : `اشترك الآن - ${course.price} ج.م`;
-                        buttonClass = course.price === 0 ? 'free' : '';
-                        badgeText = course.isNew ? 'جديد' : '';
-                        badgeClass = '';
-                        break;
-                }
+                const isFree = course.price === 0;
+                const priceText = isFree ? 'مجاني' : `${course.price} ج.م`;
                 
                 return `
                     <div class="col-lg-4 col-md-6">
                         <div class="course-card">
-                            <div class="course-image" style="background-image: url('${course.image}')">
-                                ${badgeText ? `<span class="course-badge ${badgeClass}">${badgeText}</span>` : ''}
+                            <div class="course-image" style="background-image: url('${course.image_url || '/api/placeholder/300/180'}')">
+                                ${isFree ? `<span class="course-badge free">مجاني</span>` : ''}
                             </div>
                             <div class="course-content">
-                                <div class="course-category">${getCategoryName(course.category)}</div>
+                                <div class="course-category">${course.category_name || 'عام'}</div>
                                 <h3 class="course-title">${course.title}</h3>
+                                <p class="course-description">${course.description || 'لا يوجد وصف متاح'}</p>
                                 <div class="course-instructor">
                                     <div class="instructor-avatar"></div>
-                                    <span class="instructor-name">${course.instructor}</span>
+                                    <span class="instructor-name">${course.instructor_name || 'مجهول'}</span>
                                 </div>
                                 <div class="course-meta">
                                     <div>
                                         <i class="fas fa-star text-warning"></i>
-                                        <span>${course.rating}</span>
+                                        <span>${course.average_rating ? course.average_rating.toFixed(1) : '0.0'}</span>
                                     </div>
                                     <div>
                                         <i class="fas fa-users"></i>
-                                        <span>${course.students.toLocaleString()}</span>
+                                        <span>${course.students_count || 0}</span>
                                     </div>
                                     <div>
                                         <i class="far fa-clock"></i>
-                                        <span>${course.duration}</span>
+                                        <span>${course.duration || 'غير محدد'}</span>
                                     </div>
                                 </div>
-                                ${courseStatus.status === 'not_purchased' && course.price > 0 ? 
-                                    `<div class="course-price">${course.price} ج.م</div>` : ''}
-                                ${expiryInfo}
-                                <button class="btn-enroll ${buttonClass}" 
-                                    ${courseStatus.status === 'expired' ? 'disabled' : ''}
-                                    onclick="handleCourseAction(${course.id}, '${courseStatus.status}')">
-                                    ${buttonText}
+                                <div class="course-price">${priceText}</div>
+                                <button class="btn-price ${isFree ? 'free' : ''}" onclick="handleCourseAction(${course.id}, ${isFree})">
+                                    ${isFree ? 'ابدأ التعلم' : 'اشترك الآن'}
                                 </button>
                             </div>
                         </div>
@@ -797,59 +621,23 @@
             }).join('');
         }
 
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('ar-EG');
-        }
-
-        function getCategoryName(category) {
-            const categories = {
-                programming: 'برمجة',
-                design: 'تصميم',
-                marketing: 'تسويق',
-                language: 'لغات'
-            };
-            return categories[category] || category;
-        }
-
-        function renderDefaultCourses() {
-            renderAllCourses(sampleCourses);
-        }
-
         // دالة للتعامل مع الضغط على زر الكورس
-        function handleCourseAction(courseId, status) {
-            switch(status) {
-                case 'not_purchased':
-                    // تحقق إذا كان الكورس مجاني
-                    const course = sampleCourses.find(c => c.id === courseId);
-                    if (course.price === 0) {
-                        // اشتراك مجاني
-                        alert(`تم اشتراكك في كورس "${course.title}" بنجاح!`);
-                        // هنا يمكن إضافة منطق إضافي لتحديث حالة المستخدم
-                    } else {
-                        // شراء الكورس
-                        alert(`سيتم تحويلك لصفحة الدفع لشراء كورس "${course.title}"`);
-                        // هنا يمكن إضافة منطق إضافي للدفع
-                    }
-                    break;
-                case 'owned':
-                    // الانتقال للكورس
-                    alert(`سيتم تحويلك لصفحة الكورس "${sampleCourses.find(c => c.id === courseId).title}"`);
-                    // هنا يمكن إضافة منطق إضافي للانتقال للكورس
-                    break;
-                case 'expired':
-                    // لا يمكن فعل شيء
-                    alert('هذا الكورس منتهي الصلاحية، يرجى تجديد الاشتراك');
-                    break;
+        function handleCourseAction(courseId, isFree) {
+            if (isFree) {
+                alert('سيتم تحويلك لصفحة الكورس');
+                // window.location.href = `/course/${courseId}`;
+            } else {
+                alert('سيتم تحويلك لصفحة الدفع');
+                // window.location.href = `/checkout/${courseId}`;
             }
         }
 
         // إعداد الفلاتر
         document.addEventListener('DOMContentLoaded', function() {
-            // تحديث بيانات المستخدم في الواجهة
-            document.getElementById('userName').textContent = currentUser.name;
-            document.getElementById('userBalance').textContent = `${currentUser.balance} ج.م`;
+            // تحميل بيانات المستخدم
+            loadUserData(1); // يمكن تغيير الـ ID حسب المستخدم المسجل دخوله
             
+            // تحميل الكورسات
             loadAllCourses();
             
             const filters = {};
@@ -861,7 +649,13 @@
             filterElements.forEach(elementId => {
                 const element = document.getElementById(elementId);
                 element.addEventListener('change', function() {
-                    filters[elementId] = this.value;
+                    // تحويل أسماء العناصر لأسماء متوافقة مع API
+                    const apiParamName = elementId === 'searchAllCourses' ? 'search' :
+                                        elementId === 'categoryFilterAll' ? 'category' :
+                                        elementId === 'levelFilterAll' ? 'level' :
+                                        elementId === 'priceFilter' ? 'price' : 'sort';
+                    
+                    filters[apiParamName] = this.value;
                     loadAllCourses(filters);
                 });
                 
@@ -871,7 +665,7 @@
                     element.addEventListener('input', function() {
                         clearTimeout(timeout);
                         timeout = setTimeout(() => {
-                            filters[elementId] = this.value;
+                            filters['search'] = this.value;
                             loadAllCourses(filters);
                         }, 500);
                     });
