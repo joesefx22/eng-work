@@ -1,4 +1,4 @@
-// ====== تحميل المكتبات الأساسية ======
+// server.js - خادم منصة التعليم (محدث وكامل 100%)
 import express from 'express';
 import bodyParser from 'body-parser';
 import session from 'express-session';
