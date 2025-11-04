@@ -1,4 +1,4 @@
-// db.js - ملف إدارة قاعدة البيانات المتكامل
+// db.js - ملف إدارة قاعدة البيانات المتكامل (محدث)
 import pg from 'pg';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
@@ -125,6 +125,190 @@ export function formatPrice(amount) {
   return `${parseFloat(amount).toFixed(2)} EGP`;
 }
 
+// ====== دوال جديدة مطلوبة لصفحة الكورس ======
+
+/**
+ * جلب تفاصيل الكورس مع معلومات المدرب
+ */
+export async function getCourseDetails(courseId) {
+  return await execQuerySingle(`
+    SELECT 
+      c.*,
+      u.username as instructor_name,
+      u.bio as instructor_bio,
+      u.avatar_url as instructor_image,
+      cat.name as category_name,
+      (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as students_count,
+      (SELECT COALESCE(AVG(r.rating), 0) FROM reviews r WHERE r.course_id = c.id) as average_rating,
+      (SELECT COUNT(*) FROM course_sections WHERE course_id = c.id) as sections_count
+    FROM courses c
+    LEFT JOIN users u ON c.instructor_id = u.id
+    LEFT JOIN categories cat ON c.category_id = cat.id
+    WHERE c.id = $1 AND c.published = true
+  `, [courseId]);
+}
+
+/**
+ * جلب أقسام الكورس
+ */
+export async function getCourseSections(courseId) {
+  return await execQuery(`
+    SELECT 
+      cs.*,
+      (SELECT COUNT(*) FROM section_parts WHERE section_id = cs.id) as parts_count
+    FROM course_sections cs
+    WHERE cs.course_id = $1
+    ORDER BY cs.order_index ASC
+  `, [courseId]);
+}
+
+/**
+ * جلب بيانات قسم معين
+ */
+export async function getSectionData(sectionId) {
+  return await execQuerySingle(`
+    SELECT 
+      cs.*,
+      c.title as course_title,
+      c.id as course_id,
+      (SELECT COUNT(*) FROM course_sections WHERE course_id = cs.course_id) as total_sections
+    FROM course_sections cs
+    LEFT JOIN courses c ON cs.course_id = c.id
+    WHERE cs.id = $1
+  `, [sectionId]);
+}
+
+/**
+ * جلب تقدم المستخدم في الكورس
+ */
+export async function getUserCourseProgress(userId, courseId) {
+  const progress = await execQuerySingle(`
+    SELECT 
+      up.*,
+      COUNT(DISTINCT CASE WHEN up.completed = true THEN up.section_id END) as completed_sections_count,
+      (SELECT COUNT(*) FROM course_sections WHERE course_id = $2) as total_sections,
+      (COUNT(DISTINCT CASE WHEN up.completed = true THEN up.section_id END) * 100.0 / 
+       GREATEST((SELECT COUNT(*) FROM course_sections WHERE course_id = $2), 1)) as progress_percentage
+    FROM user_progress up
+    WHERE up.user_id = $1 AND up.course_id = $2
+    GROUP BY up.user_id, up.course_id, up.current_section_id
+  `, [userId, courseId]);
+
+  if (!progress) {
+    return {
+      progress: 0,
+      completedSections: [],
+      currentSectionIndex: 0,
+      currentSectionId: null
+    };
+  }
+
+  // جلب الأقسام المكتملة
+  const completedSections = await execQuery(`
+    SELECT section_id FROM user_progress 
+    WHERE user_id = $1 AND course_id = $2 AND completed = true
+  `, [userId, courseId]);
+
+  // جلب الفهرس الحالي
+  const currentSection = await execQuerySingle(`
+    SELECT cs.order_index as current_index
+    FROM course_sections cs
+    WHERE cs.id = $1
+  `, [progress.current_section_id]);
+
+  return {
+    progress: Math.round(progress.progress_percentage),
+    completedSections: completedSections.map(row => row.section_id),
+    currentSectionIndex: currentSection ? currentSection.current_index : 0,
+    currentSectionId: progress.current_section_id
+  };
+}
+
+/**
+ * تحديث تقدم المستخدم
+ */
+export async function updateUserProgress(userId, courseId, sectionId, completed = false) {
+  const existingProgress = await execQuerySingle(`
+    SELECT * FROM user_progress 
+    WHERE user_id = $1 AND course_id = $2 AND section_id = $3
+  `, [userId, courseId, sectionId]);
+
+  if (existingProgress) {
+    return await execUpdate('user_progress', existingProgress.id, {
+      completed,
+      last_accessed: new Date(),
+      time_spent: (existingProgress.time_spent || 0) + 1
+    });
+  } else {
+    return await execInsert('user_progress', {
+      id: generateId(),
+      user_id: userId,
+      course_id: courseId,
+      section_id: sectionId,
+      completed,
+      progress_percentage: completed ? 100 : 0,
+      last_accessed: new Date(),
+      time_spent: 1,
+      created_at: new Date()
+    });
+  }
+}
+
+/**
+ * الاشتراك المجاني في الكورس
+ */
+export async function enrollUserFree(userId, courseId) {
+  // التحقق من عدم التسجيل المسبق
+  const existingEnrollment = await execQuerySingle(
+    'SELECT id FROM enrollments WHERE user_id = $1 AND course_id = $2',
+    [userId, courseId]
+  );
+
+  if (existingEnrollment) {
+    throw new Error('أنت مسجل بالفعل في هذا الكورس');
+  }
+
+  // حساب تاريخ انتهاء الصلاحية (سنة من الآن)
+  const expiryDate = new Date();
+  expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+  return await execInsert('enrollments', {
+    id: generateId(),
+    user_id: userId,
+    course_id: courseId,
+    enrolled_at: new Date(),
+    expiry_date: expiryDate,
+    progress: 0,
+    completed: false
+  });
+}
+
+/**
+ * جلب بيانات المستخدم مع الكورسات المشتراة
+ */
+export async function getUserWithPurchasedCourses(userId) {
+  const user = await execQuerySingle(`
+    SELECT 
+      u.id, u.username as name, u.email, u.avatar_url, u.balance,
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'course_id', e.course_id,
+            'expiry_date', e.expiry_date,
+            'progress', e.progress
+          ) 
+        ) FILTER (WHERE e.id IS NOT NULL),
+        '[]'
+      ) as purchased_courses
+    FROM users u
+    LEFT JOIN enrollments e ON u.id = e.user_id
+    WHERE u.id = $1
+    GROUP BY u.id, u.username, u.email, u.avatar_url, u.balance
+  `, [userId]);
+
+  return user;
+}
+
 // ====== دوال المستخدمين ======
 
 export async function createUser(userData) {
@@ -147,7 +331,7 @@ export async function findUserByEmail(email) {
 }
 
 export async function findUserById(id) {
-  return await execQuerySingle('SELECT id, username, email, role, bio, avatar_url, created_at FROM users WHERE id = $1', [id]);
+  return await execQuerySingle('SELECT id, username, email, role, bio, avatar_url, balance, created_at FROM users WHERE id = $1', [id]);
 }
 
 export async function findUserByCredentials(email, password) {
@@ -158,7 +342,7 @@ export async function findUserByCredentials(email, password) {
 }
 
 export async function updateUserProfile(userId, updateData) {
-  const allowedFields = ['username', 'bio', 'avatar_url'];
+  const allowedFields = ['username', 'bio', 'avatar_url', 'balance'];
   const filteredData = Object.keys(updateData)
     .filter(key => allowedFields.includes(key))
     .reduce((obj, key) => {
@@ -193,11 +377,13 @@ export async function getAllCourses(filters = {}) {
       c.*, 
       u.username as instructor_name,
       u.avatar_url as instructor_avatar,
-      (SELECT COUNT(*) FROM lessons l WHERE l.course_id = c.id) as lessons_count,
+      cat.name as category_name,
+      (SELECT COUNT(*) FROM course_sections cs WHERE cs.course_id = c.id) as sections_count,
       (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as students_count,
       (SELECT COALESCE(AVG(r.rating), 0) FROM reviews r WHERE r.course_id = c.id) as average_rating
     FROM courses c
     LEFT JOIN users u ON c.instructor_id = u.id
+    LEFT JOIN categories cat ON c.category_id = cat.id
     WHERE c.published = true
   `;
   
@@ -206,7 +392,7 @@ export async function getAllCourses(filters = {}) {
 
   if (filters.category) {
     paramCount++;
-    query += ` AND c.category = $${paramCount}`;
+    query += ` AND c.category_id = $${paramCount}`;
     params.push(filters.category);
   }
 
@@ -222,6 +408,12 @@ export async function getAllCourses(filters = {}) {
     params.push(`%${filters.search}%`);
   }
 
+  if (filters.price === 'free') {
+    query += ` AND c.price = 0`;
+  } else if (filters.price === 'paid') {
+    query += ` AND c.price > 0`;
+  }
+
   if (filters.featured) {
     query += ` AND c.featured = true`;
   }
@@ -232,7 +424,18 @@ export async function getAllCourses(filters = {}) {
     params.push(filters.instructor_id);
   }
 
-  query += ` ORDER BY c.created_at DESC`;
+  // تطبيق الترتيب
+  if (filters.sort === 'popular') {
+    query += ` ORDER BY students_count DESC`;
+  } else if (filters.sort === 'rating') {
+    query += ` ORDER BY average_rating DESC`;
+  } else if (filters.sort === 'price-low') {
+    query += ` ORDER BY c.price ASC`;
+  } else if (filters.sort === 'price-high') {
+    query += ` ORDER BY c.price DESC`;
+  } else {
+    query += ` ORDER BY c.created_at DESC`;
+  }
 
   return await execQuery(query, params);
 }
@@ -244,12 +447,14 @@ export async function getCourseById(courseId, userId = null) {
       u.username as instructor_name,
       u.bio as instructor_bio,
       u.avatar_url as instructor_avatar,
-      (SELECT COUNT(*) FROM lessons l WHERE l.course_id = c.id) as lessons_count,
+      cat.name as category_name,
+      (SELECT COUNT(*) FROM course_sections cs WHERE cs.course_id = c.id) as sections_count,
       (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as students_count,
       (SELECT COALESCE(AVG(r.rating), 0) FROM reviews r WHERE r.course_id = c.id) as average_rating,
       (SELECT COUNT(*) FROM reviews r WHERE r.course_id = c.id) as reviews_count
     FROM courses c
     LEFT JOIN users u ON c.instructor_id = u.id
+    LEFT JOIN categories cat ON c.category_id = cat.id
     WHERE c.id = $1
   `, [courseId]);
 
@@ -331,7 +536,7 @@ export async function getInstructorCourses(instructorId) {
   return await execQuery(`
     SELECT 
       c.*,
-      (SELECT COUNT(*) FROM lessons l WHERE l.course_id = c.id) as lessons_count,
+      (SELECT COUNT(*) FROM course_sections cs WHERE cs.course_id = c.id) as sections_count,
       (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) as students_count,
       (SELECT COALESCE(SUM(e.progress), 0) FROM enrollments e WHERE e.course_id = c.id) as total_progress
     FROM courses c
@@ -360,7 +565,7 @@ export async function enrollUserInCourse(userId, courseId) {
     enrolled_at: new Date(),
     progress: 0,
     completed: false,
-    progress_data: JSON.stringify({ lessons: {} })
+    progress_data: JSON.stringify({ sections: {} })
   });
 }
 
@@ -601,8 +806,19 @@ async function createTables() {
       role VARCHAR(50) DEFAULT 'student',
       bio TEXT,
       avatar_url VARCHAR(500),
+      balance DECIMAL(10,2) DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // جدول التصنيفات
+  await execQuery(`
+    CREATE TABLE IF NOT EXISTS categories (
+      id VARCHAR(36) PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      description TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
@@ -612,47 +828,54 @@ async function createTables() {
       id VARCHAR(36) PRIMARY KEY,
       title VARCHAR(255) NOT NULL,
       description TEXT,
-      category VARCHAR(100),
+      full_description TEXT,
+      category_id VARCHAR(36) REFERENCES categories(id),
       level VARCHAR(50) DEFAULT 'beginner',
       price DECIMAL(10,2) DEFAULT 0,
-      is_free BOOLEAN DEFAULT FALSE,
-      image VARCHAR(500),
-      requirements JSONB,
-      objectives JSONB,
+      duration VARCHAR(100),
+      image_url VARCHAR(500),
       instructor_id VARCHAR(36) REFERENCES users(id),
       published BOOLEAN DEFAULT FALSE,
       featured BOOLEAN DEFAULT FALSE,
+      requirements JSONB DEFAULT '[]',
+      learning_outcomes JSONB DEFAULT '[]',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  // جدول الدروس
+  // جدول أقسام الكورس
   await execQuery(`
-    CREATE TABLE IF NOT EXISTS lessons (
+    CREATE TABLE IF NOT EXISTS course_sections (
       id VARCHAR(36) PRIMARY KEY,
       course_id VARCHAR(36) REFERENCES courses(id) ON DELETE CASCADE,
       title VARCHAR(255) NOT NULL,
       description TEXT,
-      order_index INTEGER DEFAULT 0,
+      content_type VARCHAR(20) CHECK (content_type IN ('video', 'pdf', 'quiz')),
+      content_url VARCHAR(500),
       duration INTEGER DEFAULT 0,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      order_index INTEGER NOT NULL,
+      is_free BOOLEAN DEFAULT false,
+      questions_count INTEGER DEFAULT 0,
+      pass_score INTEGER DEFAULT 70,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  // جدول أجزاء الدرس
+  // جدول تقدم المستخدم
   await execQuery(`
-    CREATE TABLE IF NOT EXISTS lesson_parts (
+    CREATE TABLE IF NOT EXISTS user_progress (
       id VARCHAR(36) PRIMARY KEY,
-      lesson_id VARCHAR(36) REFERENCES lessons(id) ON DELETE CASCADE,
-      title VARCHAR(255) NOT NULL,
-      content_type VARCHAR(50) DEFAULT 'video',
-      content_url VARCHAR(500),
-      duration INTEGER DEFAULT 0,
-      order_index INTEGER DEFAULT 0,
-      is_free_preview BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      user_id VARCHAR(36) REFERENCES users(id),
+      course_id VARCHAR(36) REFERENCES courses(id),
+      section_id VARCHAR(36) REFERENCES course_sections(id),
+      completed BOOLEAN DEFAULT false,
+      progress_percentage INTEGER DEFAULT 0,
+      last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      time_spent INTEGER DEFAULT 0,
+      current_section_id VARCHAR(36) REFERENCES course_sections(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, section_id)
     )
   `);
 
@@ -663,6 +886,7 @@ async function createTables() {
       user_id VARCHAR(36) REFERENCES users(id),
       course_id VARCHAR(36) REFERENCES courses(id),
       enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      expiry_date DATE,
       progress INTEGER DEFAULT 0,
       completed BOOLEAN DEFAULT FALSE,
       completed_at TIMESTAMP,
@@ -711,6 +935,8 @@ async function createTables() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  console.log('✅ All tables created successfully');
 }
 
 async function seedInitialData() {
@@ -718,33 +944,102 @@ async function seedInitialData() {
   const userCount = await execQuerySingle('SELECT COUNT(*) FROM users');
   
   if (parseInt(userCount.count) === 0) {
+    // إضافة تصنيفات
+    const categories = [
+      { id: generateId(), name: 'برمجة', description: 'كورسات البرمجة وتطوير الويب' },
+      { id: generateId(), name: 'تصميم', description: 'كورسات التصميم والجرافيك' },
+      { id: generateId(), name: 'لغات', description: 'كورسات تعلم اللغات' },
+      { id: generateId(), name: 'تسويق', description: 'كورسات التسويق الرقمي' },
+      { id: generateId(), name: 'أعمال', description: 'كورسات إدارة الأعمال' }
+    ];
+
+    for (const category of categories) {
+      await execInsert('categories', category);
+    }
+
     // إضافة مستخدم مدير
     const adminId = generateId();
-    await execQuery(`
-      INSERT INTO users (id, username, email, password_hash, role, bio)
-      VALUES ($1, $2, $3, $4, $5, $6)
-    `, [
-      adminId,
-      'admin',
-      'admin@elmahdy-english.com',
-      hashValue('admin123'),
-      'admin',
-      'مدير النظام في منصة المهدي للغة الإنجليزية'
-    ]);
+    await execInsert('users', {
+      id: adminId,
+      username: 'admin',
+      email: 'admin@elmahdy-english.com',
+      password_hash: hashValue('admin123'),
+      role: 'admin',
+      bio: 'مدير النظام في منصة المهدي للغة الإنجليزية',
+      balance: 1000
+    });
 
     // إضافة معلم تجريبي
     const teacherId = generateId();
-    await execQuery(`
-      INSERT INTO users (id, username, email, password_hash, role, bio)
-      VALUES ($1, $2, $3, $4, $5, $6)
-    `, [
-      teacherId,
-      'teacher_ahmed',
-      'teacher@elmahdy-english.com',
-      hashValue('teacher123'),
-      'teacher',
-      'مدرس لغة إنجليزية محترف مع 10 سنوات خبرة في تدريس اللغة الإنجليزية لجميع المستويات'
-    ]);
+    await execInsert('users', {
+      id: teacherId,
+      username: 'teacher_ahmed',
+      email: 'teacher@elmahdy-english.com',
+      password_hash: hashValue('teacher123'),
+      role: 'teacher',
+      bio: 'مدرس لغة إنجليزية محترف مع 10 سنوات خبرة في تدريس اللغة الإنجليزية لجميع المستويات',
+      balance: 500
+    });
+
+    // إضافة كورس تجريبي
+    const courseId = generateId();
+    await execInsert('courses', {
+      id: courseId,
+      title: 'تعلم اللغة الإنجليزية من الصفر',
+      description: 'كورس متكامل لتعلم اللغة الإنجليزية من البداية حتى الاحتراف',
+      full_description: '<p>هذا الكورس الشامل سيساعدك على تعلم اللغة الإنجليزية من الصفر. سنبدأ بالأساسيات ثم ننتقل للمستويات المتقدمة.</p>',
+      category_id: categories[2].id,
+      level: 'beginner',
+      price: 0,
+      duration: '30 ساعة',
+      image_url: 'https://via.placeholder.com/300x180/4A90E2/FFFFFF?text=English+Course',
+      instructor_id: teacherId,
+      published: true,
+      requirements: JSON.stringify(['لا توجد متطلبات مسبقة', 'جهاز كمبيوتر أو هاتف ذكي', 'اتصال بالإنترنت']),
+      learning_outcomes: JSON.stringify(['التحدث باللغة الإنجليزية بطلاقة', 'فهم القواعد الأساسية', 'تحسين النطق', 'اكتساب مفردات جديدة'])
+    });
+
+    // إضافة أقسام للكورس
+    const sections = [
+      {
+        id: generateId(),
+        course_id: courseId,
+        title: 'مقدمة في اللغة الإنجليزية',
+        description: 'تعلم الأساسيات والمفردات الأساسية',
+        content_type: 'video',
+        content_url: 'https://example.com/videos/intro.mp4',
+        duration: 45,
+        order_index: 1,
+        is_free: true
+      },
+      {
+        id: generateId(),
+        course_id: courseId,
+        title: 'القواعد الأساسية',
+        description: 'تعلم قواعد اللغة الإنجليزية الأساسية',
+        content_type: 'pdf',
+        content_url: 'https://example.com/pdfs/grammar.pdf',
+        duration: 60,
+        order_index: 2,
+        is_free: false
+      },
+      {
+        id: generateId(),
+        course_id: courseId,
+        title: 'اختبار المستوى الأول',
+        description: 'اختبر مستواك في اللغة الإنجليزية',
+        content_type: 'quiz',
+        duration: 30,
+        order_index: 3,
+        questions_count: 20,
+        pass_score: 70,
+        is_free: false
+      }
+    ];
+
+    for (const section of sections) {
+      await execInsert('course_sections', section);
+    }
 
     console.log('✅ Initial data seeded successfully');
   }
